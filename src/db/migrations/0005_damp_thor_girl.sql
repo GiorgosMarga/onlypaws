@@ -1,0 +1,1 @@
+ALTER TABLE "onlypaws"."refresh_tokens" ALTER COLUMN "userId" SET NOT NULL;
