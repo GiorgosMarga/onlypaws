@@ -1,7 +1,7 @@
 import "dotenv/config"
 import { Request, Response } from "express";
 import {  StatusCodes } from "http-status-codes";
-import { otpSchema, userLoginSchema, userSchema, userUpdateSchema } from "../validators/user";
+import { emailSchema, otpSchema, userLoginSchema, userSchema, userUpdateSchema } from "../validators/user";
 import { User } from "../models/user.model";
 import NotFoundError from "../errors/NotFoundError";
 import ValidationError from "../errors/ValidationError";
@@ -14,14 +14,14 @@ import { uuidSchema } from "../validators/uuid";
 import { generateRefreshToken, getRefreshToken, signToken } from "../utils/token";
 import NotAuthorizedError from "../errors/NotAuthorizedError";
 import { deleteRefreshToken, insertRefreshToken } from "../services/token";
-import { fetchUserByEmail, fetchUserById, fetchUserFromToken, fetchUsers, insertPasswordResetToken, insertUser } from "../services/user";
+import { deleteResetToken, fetchUserByEmail, fetchUserById, fetchUserFromResetToken, fetchUsers, insertPasswordResetToken, insertUser } from "../services/user";
 import { AuthenticatedReq } from "../middlewares/authorize";
 import generateOTP from "../utils/generateOTP";
 import { otpsTable } from "../db/schema/otps";
 import { updateUser as updateUserService,deleteUser as deleteUserService } from "../services/user";
 import generateRandomHex from "../utils/generateRandomHex";
 
-
+const TOKEN_LENGTH = 16
 // TODO: check if all bodies, params and queries are validated
 
 export const getUserByID = async (req:Request, res:Response) => {
@@ -75,12 +75,12 @@ export const createUser = async (req:Request, res:Response) => {
  
 // forgotPassword is used to generate a token for password reset
 export const forgotPassword = async (req: Request, res: Response) => {
-    const {error: validationError, value} = userUpdateSchema.validate(req.body)
+    const {error: validationError} = emailSchema.validate(req.body)
     if (validationError) {
         throw new BadRequestError({message:validationError.details[0].message})
     } 
 
-    const {email} = value
+    const {email} = req.body
 
     const user = await fetchUserByEmail(email)
     if(!user) {
@@ -89,7 +89,8 @@ export const forgotPassword = async (req: Request, res: Response) => {
         return
     }
 
-    const token = generateRandomHex(16)
+    const token = generateRandomHex(TOKEN_LENGTH)
+    
 
     const passwordToken = await insertPasswordResetToken(token,user.id)
     
@@ -97,21 +98,24 @@ export const forgotPassword = async (req: Request, res: Response) => {
 }
 
 export const resetPassword = async (req: Request, res: Response) => {
-    const {error: validationError, value} = userUpdateSchema.validate(req.body)
+    const {error: validationError} = userUpdateSchema.validate(req.body)
     if (validationError) {
         throw new BadRequestError({message:validationError.details[0].message})
     } 
+    const { password } = req.body
 
-    const { password } = value
     const token = req.query["token"] as string
-    if(!token) {
-        throw new BadRequestError({message:"A token must be provided."})
+
+
+    
+    
+    
+    if(!token || token.length !== 2*TOKEN_LENGTH) {
+        throw new BadRequestError({message:"A valid token must be provided."})
     }
-    console.log(req.query)
 
 
-
-    const user = await fetchUserFromToken(token)
+    const user = await fetchUserFromResetToken(token)
     if(!user || !user.users) {
         throw new BadRequestError({message: "Invalid token"})
     }
@@ -121,7 +125,7 @@ export const resetPassword = async (req: Request, res: Response) => {
     if(!updateUser) {
         throw new NotFoundError({message: `User with id: ${user.users.id} was not found.`})
     }
-    
+    await deleteResetToken(user.password_tokens.token)
     res.status(StatusCodes.OK).json({user: updatedUser})
 }
 export const updateUser = async(req: AuthenticatedReq, res: Response) => {
@@ -205,7 +209,6 @@ export const loginUser = async (req: Request, res: Response) => {
     // TODO: change this to 5m
     const accessToken = signToken({user}, process.env.JWT_ACCESS_SECRET!, {expiresIn: "1h"})
     const refreshToken = generateRefreshToken(user.id,new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) 
-    console.log(new Date(), refreshToken.expiresAt,new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
     await insertRefreshToken(refreshToken)
     
     const signedRefreshToken = signToken({refreshToken}, process.env.JWT_REFRESH_SECRET!, {expiresIn: "7d"})
