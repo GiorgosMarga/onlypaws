@@ -5,5 +5,5 @@ export const tokenRouter = Router()
 
 
 tokenRouter.get("/refresh", refreshToken)
-tokenRouter.get("/revoke", revokeToken)
+tokenRouter.patch("/:id", revokeToken)
 

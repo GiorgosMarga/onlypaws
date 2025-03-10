@@ -15,7 +15,7 @@ export const insertRefreshToken = async (refreshToken: RefreshToken) => {
 
 export const deleteRefreshToken = async (refreshTokenId: string, userId: string) => {
     try{
-        const token = await db.delete(refreshTokenTable).where(and(eq(refreshTokenTable.id, refreshTokenId),eq(refreshTokenTable.userId,userId), gt(refreshTokenTable.expiresAt, new Date()))).returning()
+        const token = await db.delete(refreshTokenTable).where(and(eq(refreshTokenTable.id, refreshTokenId),eq(refreshTokenTable.userId,userId), gt(refreshTokenTable.expiresAt, new Date()), eq(refreshTokenTable.isRevoked,false))).returning()
         return token.length === 0 ? null : token[0]
     }catch(e){
         return null

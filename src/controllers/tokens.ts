@@ -1,6 +1,6 @@
 import "dotenv/config"
 import { Request, Response } from "express";
-import { generateRefreshToken, getRefreshToken, signToken, validateToken } from "../utils/token";
+import { generateRefreshToken, getRefreshToken, signToken } from "../utils/token";
 import { StatusCodes } from "http-status-codes";
 import NotAuthorizedError from "../errors/NotAuthorizedError";
 import { fetchUserById } from "../services/user";
@@ -10,6 +10,7 @@ import BadRequestError from "../errors/BadRequestError";
 import { revokeToken as revokeTokenService } from "../services/token";
 import NotFoundError from "../errors/NotFoundError";
 import convertToMs from "../utils/convertToMs";
+import InternalServerError from "../errors/InternalServerError"
 
 export const refreshToken = async (req: Request, res: Response) => {
     
@@ -36,9 +37,11 @@ export const refreshToken = async (req: Request, res: Response) => {
     const newRefreshToken = generateRefreshToken(user.id, new Date(Date.now() + convertToMs(7,"d")))
     
     const insertedToken = await insertRefreshToken(newRefreshToken)
-    console.log(insertedToken)
+    if(!insertedToken) {
+        throw new InternalServerError({message:"Error inserting new refresh token"})
+    }
     const accessToken = signToken({user},process.env.JWT_ACCESS_SECRET!,{expiresIn: "1h"})
-    const signedRefreshToken = signToken({refreshToken: newRefreshToken},process.env.JWT_REFRESH_SECRET!,{expiresIn: "7d"})
+    const signedRefreshToken = signToken({refreshToken: insertedToken},process.env.JWT_REFRESH_SECRET!,{expiresIn: "7d"})
 
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',signedRefreshToken, { maxAge: convertToMs(7,"d"), httpOnly: true });
