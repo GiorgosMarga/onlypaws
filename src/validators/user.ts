@@ -1,5 +1,4 @@
 import Joi from "joi"
-import { User } from "../models/user.model"
 
 export const userSchema = Joi.object({
     username: Joi.string().required().min(3).max(255),
@@ -21,4 +20,12 @@ export const userLoginSchema = Joi.object({
 
 export const otpSchema = Joi.object({
     otp: Joi.number().min(10_000).max(99_999).required()
+})
+
+export const emailSchema = Joi.object({
+    email: Joi.string().email().required()
+})
+
+export const passwordSchema = Joi.object({
+    password: Joi.string().min(7).max(255).required()
 })

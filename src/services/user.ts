@@ -41,10 +41,14 @@ export const insertPasswordResetToken = async (token: string, userId:string) => 
     return insertedToken.length === 0 ? null : insertedToken[0]
 }
 
-export const fetchUserFromToken = async (token: string) => {
+export const fetchUserFromResetToken = async (token: string) => {
 
     const user = await db.select().from(passwordTokensTable).leftJoin(usersTable, eq(usersTable.id, passwordTokensTable.userId)).where(and(eq(passwordTokensTable.token,token),gt(passwordTokensTable.expiresAt, new Date())))
 
 
     return user.length === 0 ? null : user[0]
+}
+
+export const deleteResetToken = async (tokenId: string) => {
+    await db.delete(passwordTokensTable).where(and(eq(passwordTokensTable.token,tokenId)))
 }
