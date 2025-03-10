@@ -1,8 +1,9 @@
-import { count, eq } from "drizzle-orm"
+import { and, count, eq, gt } from "drizzle-orm"
 import { db } from "../db"
 import { usersTable } from "../db/schema/users"
 import { calculateOffset } from "../utils/calculateOffset"
 import { User } from "../models/user.model"
+import { passwordTokensTable } from "../db/schema/passwordTokens"
 
 export const fetchUserByEmail = async (email: string) => {
     const user = await db.select().from(usersTable).where(eq(usersTable.email,email))
@@ -32,4 +33,18 @@ export const updateUser = async (user: User) => {
 export const deleteUser = async (userId: string) => {
     const deletedUser = await db.delete(usersTable).where(eq(usersTable.id, userId)).returning()
     return deletedUser.length === 0 ? null : deletedUser[0]
+}
+
+
+export const insertPasswordResetToken = async (token: string, userId:string) => {
+    const insertedToken = await db.insert(passwordTokensTable).values({token,userId}).returning()
+    return insertedToken.length === 0 ? null : insertedToken[0]
+}
+
+export const fetchUserFromToken = async (token: string) => {
+
+    const user = await db.select().from(passwordTokensTable).leftJoin(usersTable, eq(usersTable.id, passwordTokensTable.userId)).where(and(eq(passwordTokensTable.token,token),gt(passwordTokensTable.expiresAt, new Date())))
+
+
+    return user.length === 0 ? null : user[0]
 }

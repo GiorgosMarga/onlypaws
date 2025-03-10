@@ -1,13 +1,10 @@
 import "dotenv/config"
 import { Request, Response } from "express";
 import { generateRefreshToken, getRefreshToken, signToken, validateToken } from "../utils/token";
-import { db } from "../db";
-import { and,  eq,  gt,  lt } from "drizzle-orm";
-import { refreshTokenTable } from "../db/schema/refreshTokens";
 import { StatusCodes } from "http-status-codes";
 import NotAuthorizedError from "../errors/NotAuthorizedError";
 import { fetchUserById } from "../services/user";
-import { insertRefreshToken } from "../services/token";
+import { deleteRefreshToken, insertRefreshToken } from "../services/token";
 import { uuidSchema } from "../validators/uuid";
 import BadRequestError from "../errors/BadRequestError";
 import { revokeToken as revokeTokenService } from "../services/token";
@@ -22,9 +19,9 @@ export const refreshToken = async (req: Request, res: Response) => {
     }
 
     // delete old refresh token and issue a new one together with an access token
-    const isValid = await db.delete(refreshTokenTable).where(and(eq(refreshTokenTable.id, tokenPayload.id),eq(refreshTokenTable.userId, tokenPayload.userId), gt(refreshTokenTable.expiresAt, new Date()))).returning()
+    const isValid = await deleteRefreshToken(tokenPayload.id, tokenPayload.userId)
 
-    if (isValid.length === 0 ){
+    if (!isValid){
         throw new NotAuthorizedError({message: "You are not authorized to perform this action."})
     }
 

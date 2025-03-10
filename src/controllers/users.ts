@@ -8,18 +8,21 @@ import ValidationError from "../errors/ValidationError";
 import { db } from "../db";
 import { usersTable } from "../db/schema/users";
 import { comparePasswords, hashPassword } from "../utils/password";
-import { eq, count, and, lt, gt } from "drizzle-orm";
+import { eq,  and,  gt } from "drizzle-orm";
 import BadRequestError from "../errors/BadRequestError";
 import { uuidSchema } from "../validators/uuid";
 import { generateRefreshToken, getRefreshToken, signToken } from "../utils/token";
 import NotAuthorizedError from "../errors/NotAuthorizedError";
 import { deleteRefreshToken, insertRefreshToken } from "../services/token";
-import { fetchUserByEmail, fetchUserById, fetchUsers, insertUser } from "../services/user";
+import { fetchUserByEmail, fetchUserById, fetchUserFromToken, fetchUsers, insertPasswordResetToken, insertUser } from "../services/user";
 import { AuthenticatedReq } from "../middlewares/authorize";
 import generateOTP from "../utils/generateOTP";
 import { otpsTable } from "../db/schema/otps";
 import { updateUser as updateUserService,deleteUser as deleteUserService } from "../services/user";
+import generateRandomHex from "../utils/generateRandomHex";
 
+
+// TODO: check if all bodies, params and queries are validated
 
 export const getUserByID = async (req:Request, res:Response) => {
     const {id} = req.params
@@ -70,7 +73,57 @@ export const createUser = async (req:Request, res:Response) => {
     res.status(StatusCodes.CREATED).json({user: insrtedUser})
 }
  
-// TODO: Implement update password
+// forgotPassword is used to generate a token for password reset
+export const forgotPassword = async (req: Request, res: Response) => {
+    const {error: validationError, value} = userUpdateSchema.validate(req.body)
+    if (validationError) {
+        throw new BadRequestError({message:validationError.details[0].message})
+    } 
+
+    const {email} = value
+
+    const user = await fetchUserByEmail(email)
+    if(!user) {
+        // user doesnt exist still send OK 
+        res.status(StatusCodes.OK).json({message: "Success"})
+        return
+    }
+
+    const token = generateRandomHex(16)
+
+    const passwordToken = await insertPasswordResetToken(token,user.id)
+    
+    res.status(StatusCodes.OK).json({token:passwordToken})
+}
+
+export const resetPassword = async (req: Request, res: Response) => {
+    const {error: validationError, value} = userUpdateSchema.validate(req.body)
+    if (validationError) {
+        throw new BadRequestError({message:validationError.details[0].message})
+    } 
+
+    const { password } = value
+    const token = req.query["token"] as string
+    if(!token) {
+        throw new BadRequestError({message:"A token must be provided."})
+    }
+    console.log(req.query)
+
+
+
+    const user = await fetchUserFromToken(token)
+    if(!user || !user.users) {
+        throw new BadRequestError({message: "Invalid token"})
+    }
+    user.users.password = hashPassword(password)
+
+    const updatedUser = await updateUserService(user.users)
+    if(!updateUser) {
+        throw new NotFoundError({message: `User with id: ${user.users.id} was not found.`})
+    }
+    
+    res.status(StatusCodes.OK).json({user: updatedUser})
+}
 export const updateUser = async(req: AuthenticatedReq, res: Response) => {
     const {id} = req.params
 
