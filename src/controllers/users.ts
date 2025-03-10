@@ -20,6 +20,7 @@ import generateOTP from "../utils/generateOTP";
 import { otpsTable } from "../db/schema/otps";
 import { updateUser as updateUserService,deleteUser as deleteUserService } from "../services/user";
 import generateRandomHex from "../utils/generateRandomHex";
+import convertToMs from "../utils/convertToMs";
 
 const TOKEN_LENGTH = 16
 // TODO: check if all bodies, params and queries are validated
@@ -109,7 +110,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 
     
     
-    
+    // TODO: fix 2 * token_length
     if(!token || token.length !== 2*TOKEN_LENGTH) {
         throw new BadRequestError({message:"A valid token must be provided."})
     }
@@ -207,15 +208,16 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     // TODO: change this to 5m
+    const refreshTokenExpirationDate = new Date(Date.now() + convertToMs(7,"d")) // <- 7 days
     const accessToken = signToken({user}, process.env.JWT_ACCESS_SECRET!, {expiresIn: "1h"})
-    const refreshToken = generateRefreshToken(user.id,new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) 
+    const refreshToken = generateRefreshToken(user.id,refreshTokenExpirationDate) 
     await insertRefreshToken(refreshToken)
     
     const signedRefreshToken = signToken({refreshToken}, process.env.JWT_REFRESH_SECRET!, {expiresIn: "7d"})
 
 
-    res.cookie('access_token',accessToken, { maxAge: 1 * 1000 * 60*60 , httpOnly: true }); // <- 1 h
-    res.cookie('refresh_token',signedRefreshToken, { maxAge: 7 * 1000 * 60 * 60 * 24 , httpOnly: true }); // <- 7 days
+    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
+    res.cookie('refresh_token',signedRefreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
     // return user only for testing
     res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: signedRefreshToken})
 
@@ -225,9 +227,7 @@ export const sendOTP = async (req: AuthenticatedReq, res: Response) => {
     const user  = req.user!
     
     const otp = generateOTP()
-    const expiresAt = new Date(Date.now() + 5 * 60  * 1000)
-
-
+    const expiresAt = new Date(Date.now() + convertToMs(5,"min"))
     const newOTP = await db.insert(otpsTable).values({otp,expiresAt, userId: user.id}).returning()
 
     res.status(StatusCodes.OK).json({otp: newOTP})
@@ -241,7 +241,8 @@ export const verifyUser = async (req: AuthenticatedReq, res: Response) => {
     const {otp} = req.body
     const user = req.user!
 
-    const fetchedOTP = await db.delete(otpsTable).where(and(eq(otpsTable.userId, user.id),eq(otpsTable.otp,otp), gt(otpsTable.expiresAt, new Date(Date.now())))).returning()
+    const currentTimestamp = new Date(Date.now())
+    const fetchedOTP = await db.delete(otpsTable).where(and(eq(otpsTable.userId, user.id),eq(otpsTable.otp,otp), gt(otpsTable.expiresAt, currentTimestamp))).returning()
 
     if(fetchedOTP.length === 0) {
         throw new BadRequestError({message: "Invalid OTP"})
