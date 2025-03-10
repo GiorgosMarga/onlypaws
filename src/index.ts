@@ -11,7 +11,7 @@ const app: Express = express()
 app.use(express.json())
 app.use(cookieParser())
 app.use("/api/v1/users",userRouter)
-app.use("/api/v1/refresh-token",tokenRouter)
+app.use("/api/v1/tokens",tokenRouter)
 app.use(errorHandler)
 
 

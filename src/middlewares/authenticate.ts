@@ -1,6 +1,6 @@
 import "dotenv/config"
 import { NextFunction, Request, Response } from "express";
-import { validateToken } from "../utils/token";
+import { AccessTokenJWT, validateToken } from "../utils/token";
 import NotAuthorizedError from "../errors/NotAuthorizedError";
 
 export default function authenticate(
@@ -18,11 +18,11 @@ export default function authenticate(
         throw new NotAuthorizedError({message:"You are not authenticated"})
     }
 
-    const tokenPayload = validateToken(token, process.env.JWT_ACCESS_SECRET!)
+    const tokenPayload = validateToken<AccessTokenJWT>(token, process.env.JWT_ACCESS_SECRET!)
     if(!tokenPayload) {
         throw new NotAuthorizedError({message:"You are not authenticated"})
     }
-    const {payload: user} = tokenPayload
+    const { user } = tokenPayload
     req["user"] = user 
     next()
 }

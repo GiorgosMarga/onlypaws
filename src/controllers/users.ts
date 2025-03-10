@@ -8,18 +8,21 @@ import ValidationError from "../errors/ValidationError";
 import { db } from "../db";
 import { usersTable } from "../db/schema/users";
 import { comparePasswords, hashPassword } from "../utils/password";
-import { eq, count, and } from "drizzle-orm";
+import { eq,  and,  gt } from "drizzle-orm";
 import BadRequestError from "../errors/BadRequestError";
 import { uuidSchema } from "../validators/uuid";
-import {calculateOffset} from "../utils/calculateOffset"
-import { generateRefreshToken, signToken } from "../utils/token";
+import { generateRefreshToken, getRefreshToken, signToken } from "../utils/token";
 import NotAuthorizedError from "../errors/NotAuthorizedError";
-import { insertRefreshToken } from "../services/token";
-import { fetchUserByEmail } from "../services/user";
+import { deleteRefreshToken, insertRefreshToken } from "../services/token";
+import { fetchUserByEmail, fetchUserById, fetchUserFromToken, fetchUsers, insertPasswordResetToken, insertUser } from "../services/user";
 import { AuthenticatedReq } from "../middlewares/authorize";
 import generateOTP from "../utils/generateOTP";
-import { error } from "console";
+import { otpsTable } from "../db/schema/otps";
+import { updateUser as updateUserService,deleteUser as deleteUserService } from "../services/user";
+import generateRandomHex from "../utils/generateRandomHex";
 
+
+// TODO: check if all bodies, params and queries are validated
 
 export const getUserByID = async (req:Request, res:Response) => {
     const {id} = req.params
@@ -31,11 +34,11 @@ export const getUserByID = async (req:Request, res:Response) => {
     }
 
 
-    const user = await db.select().from(usersTable).where(eq(usersTable.id,id))
-    if(!user[0]) {
+    const user = await fetchUserById(id)
+    if(!user) {
         throw new NotFoundError({message: `User with id: ${id} was not found.`})
     }
-    res.status(StatusCodes.OK).json({user: user[0]})
+    res.status(StatusCodes.OK).json({user})
     
 }
 
@@ -50,9 +53,7 @@ export const getUsers = async (req:Request, res:Response) => {
     if (isNaN(limit) || limit< 0){
         limit = 10
     }
-
-    const users = await db.select().from(usersTable).limit(limit).offset(calculateOffset(page,limit))
-
+    const users = await fetchUsers({page,limit})
     res.status(StatusCodes.OK).json({users})
 }
 
@@ -62,18 +63,67 @@ export const createUser = async (req:Request, res:Response) => {
         throw new ValidationError({message: validationError.details[0].message})
     }
 
-    let user = req.body
-
-    const exists = await db.select({count: count()}).from(usersTable).where(eq(usersTable.email,user.email))
-    if(exists[0].count !== 0) {
-        throw new BadRequestError({message: "emails already exists"})
+    let user = req.body as User
+    const exists = await fetchUserByEmail(user.email)
+    if(exists){
+        throw new BadRequestError({message: "Email already in use."})
     }
     user.password = hashPassword(user.password)
-    const result = await db.insert(usersTable).values(user).returning({id: usersTable.id})
-    user.id = result[0].id
-    res.status(StatusCodes.CREATED).json({user})
+    const insrtedUser = await insertUser(user)
+    res.status(StatusCodes.CREATED).json({user: insrtedUser})
+}
+ 
+// forgotPassword is used to generate a token for password reset
+export const forgotPassword = async (req: Request, res: Response) => {
+    const {error: validationError, value} = userUpdateSchema.validate(req.body)
+    if (validationError) {
+        throw new BadRequestError({message:validationError.details[0].message})
+    } 
+
+    const {email} = value
+
+    const user = await fetchUserByEmail(email)
+    if(!user) {
+        // user doesnt exist still send OK 
+        res.status(StatusCodes.OK).json({message: "Success"})
+        return
+    }
+
+    const token = generateRandomHex(16)
+
+    const passwordToken = await insertPasswordResetToken(token,user.id)
+    
+    res.status(StatusCodes.OK).json({token:passwordToken})
 }
 
+export const resetPassword = async (req: Request, res: Response) => {
+    const {error: validationError, value} = userUpdateSchema.validate(req.body)
+    if (validationError) {
+        throw new BadRequestError({message:validationError.details[0].message})
+    } 
+
+    const { password } = value
+    const token = req.query["token"] as string
+    if(!token) {
+        throw new BadRequestError({message:"A token must be provided."})
+    }
+    console.log(req.query)
+
+
+
+    const user = await fetchUserFromToken(token)
+    if(!user || !user.users) {
+        throw new BadRequestError({message: "Invalid token"})
+    }
+    user.users.password = hashPassword(password)
+
+    const updatedUser = await updateUserService(user.users)
+    if(!updateUser) {
+        throw new NotFoundError({message: `User with id: ${user.users.id} was not found.`})
+    }
+    
+    res.status(StatusCodes.OK).json({user: updatedUser})
+}
 export const updateUser = async(req: AuthenticatedReq, res: Response) => {
     const {id} = req.params
 
@@ -95,16 +145,17 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
     }
 
     if(req.body["password"]) {
-        console.log("Updating password")
         req.body["password"] = hashPassword(req.body["password"])
     }
 
-    const updatedUser = await db.update(usersTable).set({...req.body, updatedAt: new Date()}).where(eq(usersTable.id,id)).returning()
-    if(updatedUser.length === 0) {
+    let updatedUser = {id,...req.body}
+
+    updatedUser = await updateUserService(updatedUser)
+    if(!updatedUser) {
         throw new NotFoundError({message: `User with id: ${id} was not found.`})
     }
 
-    res.status(StatusCodes.OK).json({user: updatedUser[0]})
+    res.status(StatusCodes.OK).json({user: updatedUser})
 }
 
 export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
@@ -122,13 +173,13 @@ export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
     }
 
 
-    const deletedUser = await db.delete(usersTable).where(eq(usersTable.id, id)).returning()
+    const deletedUser = await deleteUserService(id)
 
-    if(deletedUser.length === 0) {
+    if(!deletedUser) {
         throw new NotFoundError({message: `User with id: ${id} was not found.`})
     }
 
-    res.status(StatusCodes.OK).json({user: deletedUser[0]})
+    res.status(StatusCodes.OK).json({user: deletedUser})
 }
 
 export const loginUser = async (req: Request, res: Response) => {
@@ -150,15 +201,17 @@ export const loginUser = async (req: Request, res: Response) => {
     if(!comparePasswords(user.password, password )){
         throw new ValidationError({message: "invalid credentials"})
     }
-    const accessToken = signToken(user, process.env.JWT_ACCESS_SECRET!, {expiresIn: "5m"})
 
-    const refreshToken = generateRefreshToken(user.id,new Date(Date() + 7 * 24 * 60 * 60 * 1000)) 
+    // TODO: change this to 5m
+    const accessToken = signToken({user}, process.env.JWT_ACCESS_SECRET!, {expiresIn: "1h"})
+    const refreshToken = generateRefreshToken(user.id,new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)) 
+    console.log(new Date(), refreshToken.expiresAt,new Date(Date.now() + 7 * 24 * 60 * 60 * 1000))
     await insertRefreshToken(refreshToken)
     
-    const signedRefreshToken = signToken(refreshToken, process.env.JWT_REFRESH_SECRET!, {expiresIn: "7d"})
+    const signedRefreshToken = signToken({refreshToken}, process.env.JWT_REFRESH_SECRET!, {expiresIn: "7d"})
 
 
-    res.cookie('access_token',accessToken, { maxAge: 15 * 1000 * 60 , httpOnly: true }); // <- 15 minutes
+    res.cookie('access_token',accessToken, { maxAge: 1 * 1000 * 60*60 , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',signedRefreshToken, { maxAge: 7 * 1000 * 60 * 60 * 24 , httpOnly: true }); // <- 7 days
     // return user only for testing
     res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: signedRefreshToken})
@@ -167,11 +220,14 @@ export const loginUser = async (req: Request, res: Response) => {
 
 export const sendOTP = async (req: AuthenticatedReq, res: Response) => {
     const user  = req.user!
+    
     const otp = generateOTP()
     const expiresAt = new Date(Date.now() + 5 * 60  * 1000)
-    const updatedUser = await db.update(usersTable).set({otp, otpExpiresAt:expiresAt}).where(eq(usersTable.id,user.id)).returning()
 
-    res.status(StatusCodes.OK).json({updatedUser})
+
+    const newOTP = await db.insert(otpsTable).values({otp,expiresAt, userId: user.id}).returning()
+
+    res.status(StatusCodes.OK).json({otp: newOTP})
 }
 
 export const verifyUser = async (req: AuthenticatedReq, res: Response) => {
@@ -182,20 +238,30 @@ export const verifyUser = async (req: AuthenticatedReq, res: Response) => {
     const {otp} = req.body
     const user = req.user!
 
-    const fetchedUser = await db.update(usersTable).set({isVerified: true}).where(eq(usersTable.id, user.id)).returning()
+    const fetchedOTP = await db.delete(otpsTable).where(and(eq(otpsTable.userId, user.id),eq(otpsTable.otp,otp), gt(otpsTable.expiresAt, new Date(Date.now())))).returning()
 
-    if(fetchedUser.length === 0) {
-        throw new NotFoundError({message: `User with id: ${user.id} was not found`})
-    }
-    console.log(fetchedUser)
-    if(fetchedUser[0].otp !== otp || fetchedUser[0].otpExpiresAt! < new Date()) {
+    if(fetchedOTP.length === 0) {
         throw new BadRequestError({message: "Invalid OTP"})
     }
 
-    if(fetchedUser[0].isVerified) {
-        throw new BadRequestError({message: "User is already verified."})
-    }
+    // need to update user to verified
+    await db.update(usersTable).set({isVerified: true}).where(eq(usersTable.id,user.id))
 
     res.status(StatusCodes.OK).json({message: "Success"})
 
+}
+
+export const logout = async (req: AuthenticatedReq, res: Response) => {
+    const user = req.user!
+
+    const refreshTokenPayload = getRefreshToken(req)
+
+    if(refreshTokenPayload) {
+        await deleteRefreshToken(refreshTokenPayload.id,user.id)
+    }
+
+
+    res.cookie("access_token","")
+    res.cookie("refresh_token","")
+    res.status(StatusCodes.OK).json({message: "Success"})
 }

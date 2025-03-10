@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto"
-import "dotenv/config"
 import jwt, { JwtPayload } from "jsonwebtoken"
 import { RefreshToken } from "../models/refreshToken.model"
-
+import type { Request } from "express"
+import { User } from "../models/user.model"
 
 export const generateRefreshToken = (userId: string, expiresAt: Date) => {
     return {
@@ -15,15 +15,31 @@ export const generateRefreshToken = (userId: string, expiresAt: Date) => {
 
 // TODO: add fields in jwt
 export const signToken = (payload: any, secret: string, options?: jwt.SignOptions) => {
-    return jwt.sign({payload}, secret, options);
+    return jwt.sign(payload, secret, options);
 }
 
+export interface AccessTokenJWT extends JwtPayload {
+    user: User
+}
+export interface RefreshTokenJWT extends JwtPayload {
+    refreshToken: RefreshToken
+}
 
-export const validateToken = (token: string, secret: string) => {
+export const validateToken = <T extends JwtPayload>(token: string, secret: string): T | null => {
     try{
-        const payload = jwt.verify(token,secret)
-        return payload as JwtPayload
+        return jwt.verify(token,secret) as T
     }catch(err){
         return null
     }
+}
+
+export const getRefreshToken = (req: Request): RefreshToken | null => {
+    const token = req.cookies["refresh_token"]
+    const payload = validateToken<RefreshTokenJWT>(token, process.env.JWT_REFRESH_SECRET!)
+    if(!payload){
+        return null
+    }
+    console.log({payload})
+    const { refreshToken } = payload
+    return refreshToken
 }
