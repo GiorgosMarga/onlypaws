@@ -1,4 +1,4 @@
-import { uuid, varchar, timestamp, uniqueIndex, pgSchema, date, boolean, real } from "drizzle-orm/pg-core";
+import { uuid, varchar, timestamp, uniqueIndex, pgSchema, date, boolean } from "drizzle-orm/pg-core";
 
 export const schema = pgSchema("onlypaws")
 export const userRole = schema.enum("userRole", ["USER","ADMIN"]) 
@@ -13,10 +13,8 @@ export const usersTable = schema.table("users", {
     lastLogin: date("last_login"),
     isBanned: boolean("is_banned").default(false),
     isVerified: boolean("is_verified").default(false),
-    otp: real(),
-    otpExpiresAt: timestamp("otp_expires_at"),
     createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
 }, table => [
         uniqueIndex("emailIndex").on(table.email)
     ]
