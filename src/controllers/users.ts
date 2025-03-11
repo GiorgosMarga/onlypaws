@@ -2,7 +2,7 @@ import "dotenv/config"
 import { Request, Response } from "express";
 import {  StatusCodes } from "http-status-codes";
 import { emailSchema, googleCodeSchema, otpSchema, userLoginSchema, userSchema, userUpdateSchema } from "../validators/user";
-import type { UserInsert } from "../models/user.model";
+import type { UserData, UserInsert } from "../models/user.model";
 import Errors from "../errors"
 import { db } from "../db";
 import { usersTable } from "../db/schema/users";
@@ -263,7 +263,6 @@ export const logout = async (req: AuthenticatedReq, res: Response) => {
 }
 
 export const registerGoogleUser = async (req: Request, res: Response) => {
-    console.log(req.query)
     const {error: validationError} = googleCodeSchema.validate(req.query)
 
     if(validationError) {
@@ -272,7 +271,7 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
 
 
     const code = req.query["code"] as string
-
+    // TODO: find these urls
     const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -300,14 +299,14 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
         headers: { Authorization: `Bearer ${data.access_token}` },
     });
 
-    const userData = await userResponse.json();
-    console.log(userData)
+    const userData = await userResponse.json() as UserData;
     let user = await fetchUserByEmail(userData.email)
     if(!user) {
         user = await insertUser({
             email: userData.email,
             google_id: userData.id,
-            username: userData.name
+            username: userData.name,
+            profilePic: userData.picture
         })
         if(!user) {
             throw new Errors.InternalServerError({message:"Error registering user"})
@@ -319,7 +318,7 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
     // return user only for testing
-    res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: refreshToken})
+    res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: refreshToken, userData})
 
 }
 
