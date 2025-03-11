@@ -39,7 +39,6 @@ export const getRefreshToken = (req: Request): RefreshToken | null => {
     if(!payload){
         return null
     }
-    console.log({payload})
     const { refreshToken } = payload
     return refreshToken
 }

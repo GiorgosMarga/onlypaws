@@ -1,8 +1,8 @@
-import { and, count, eq, gt } from "drizzle-orm"
+import { and, eq, gt } from "drizzle-orm"
 import { db } from "../db"
 import { usersTable } from "../db/schema/users"
 import { calculateOffset } from "../utils/calculateOffset"
-import { User } from "../models/user.model"
+import {type UserSelect, type UserInsert } from "../models/user.model"
 import { passwordTokensTable } from "../db/schema/passwordTokens"
 
 export const fetchUserByEmail = async (email: string) => {
@@ -20,12 +20,12 @@ export const fetchUsers = async ({page=1,limit=10}:{page:number, limit:number}) 
     return users
 }
 
-export const insertUser = async (user: User) => {
+export const insertUser = async (user: UserInsert) => {
     const insertedUser = await db.insert(usersTable).values(user).returning()
     return insertedUser.length === 0 ? null : insertedUser[0]
 }
 
-export const updateUser = async (user: User) => {
+export const updateUser = async (user: UserSelect) => {
     const updatedUser = await db.update(usersTable).set(user).where(eq(usersTable.id, user.id)).returning()
     return updatedUser.length === 0 ? null : updatedUser[0]
 }

@@ -29,3 +29,10 @@ export const emailSchema = Joi.object({
 export const passwordSchema = Joi.object({
     password: Joi.string().min(7).max(255).required()
 })
+
+export const googleCodeSchema = Joi.object({
+    code: Joi.string().required(),
+    scope: Joi.string(),
+    authuser: Joi.string(),
+    prompt: Joi.string()
+})

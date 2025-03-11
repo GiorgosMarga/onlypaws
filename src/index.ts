@@ -1,19 +1,44 @@
-import express, {Express} from "express";
+import express, {type Express,type Request,type Response} from "express";
 import { userRouter } from "./routes/users";
 import dotenv from "dotenv"
 import errorHandler from "./middlewares/error";
 import cookieParser from "cookie-parser"
 import { tokenRouter } from "./routes/tokens";
+import { pool } from "./db";
 dotenv.config()
 
 const app: Express = express()
 
 app.use(express.json())
-app.use(cookieParser())
+app.use(cookieParser()) 
 app.use("/api/v1/users",userRouter)
 app.use("/api/v1/tokens",tokenRouter)
 app.use(errorHandler)
 
-
-
-app.listen(process.env.PORT, () => console.log(`Server is running at :${process.env.PORT}`))
+const server = app.listen(process.env.PORT, () => console.log(`Server is running at :${process.env.PORT}`))
+process.on("SIGTERM", () => {
+    console.log("Received SIGTERM")
+    server.close(async () => {
+        try{
+            await pool.end()
+            console.log("Successfully disconnected from db")
+        }catch (err) {
+            console.log("Error disconnecting from db: ",err)
+        }
+        console.log("Terminating server")
+        process.exit(0)
+    })
+})
+process.on("SIGINT", () => {
+    console.log("Received SIGINT")
+    server.close(async () => {
+        try{
+            await pool.end()
+            console.log("Successfully disconnected from db")
+        }catch (err) {
+            console.log("Error disconnecting from db: ",err)
+        }
+        console.log("Terminating server")
+        process.exit(0)
+    })
+})
