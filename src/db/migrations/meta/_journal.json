@@ -78,6 +78,20 @@
       "when": 1741608330666,
       "tag": "0010_daily_nomad",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1741693366181,
+      "tag": "0011_melted_metal_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1741694812648,
+      "tag": "0012_stiff_madripoor",
+      "breakpoints": true
     }
   ]
 }
