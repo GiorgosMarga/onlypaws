@@ -6,10 +6,11 @@ import errorHandler from "./middlewares/error";
 import cookieParser from "cookie-parser"
 import { tokenRouter } from "./routes/tokens";
 import { pool } from "./db";
+import morgan from "morgan"
 dotenv.config()
 
 const app: Express = express()
-
+app.use(morgan("dev"))
 app.use(express.json())
 app.use(cookieParser()) 
 app.use("/api/v1/users",userRouter)
