@@ -1,5 +1,6 @@
-import express, {type Express,type Request,type Response} from "express";
+import express, {type Express} from "express";
 import { userRouter } from "./routes/users";
+import { userInfoRouter } from "./routes/userInfo";
 import dotenv from "dotenv"
 import errorHandler from "./middlewares/error";
 import cookieParser from "cookie-parser"
@@ -13,9 +14,11 @@ app.use(express.json())
 app.use(cookieParser()) 
 app.use("/api/v1/users",userRouter)
 app.use("/api/v1/tokens",tokenRouter)
+app.use("/api/v1/user-info",userInfoRouter)
 app.use(errorHandler)
 
 const server = app.listen(process.env.PORT, () => console.log(`Server is running at :${process.env.PORT}`))
+
 process.on("SIGTERM", () => {
     console.log("Received SIGTERM")
     server.close(async () => {

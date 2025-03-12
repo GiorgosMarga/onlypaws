@@ -4,6 +4,7 @@ import { usersTable } from "../db/schema/users"
 import { calculateOffset } from "../utils/calculateOffset"
 import {type User, type UserInsert } from "../models/user.model"
 import { passwordTokensTable } from "../db/schema/passwordTokens"
+import { userInfoTable } from "../db/schema/userInfo"
 
 const fetchUserByEmail = async (email: string) => {
     const user = await db.select().from(usersTable).where(eq(usersTable.email,email))
@@ -11,7 +12,7 @@ const fetchUserByEmail = async (email: string) => {
 }
 
 const fetchUserById = async (id: string) => {
-    const user = await db.select().from(usersTable).where(eq(usersTable.id,id))
+    const user = await db.select().from(usersTable).leftJoin(userInfoTable,eq(usersTable.id,userInfoTable.userId)).where(eq(usersTable.id,id))
     return user.length === 0 ? null : user[0]
 }
 const fetchUsers = async ({page=1,limit=10}:{page:number, limit:number}) => {
