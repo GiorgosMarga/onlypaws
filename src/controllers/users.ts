@@ -38,7 +38,7 @@ export const getUserByID = async (req:Request, res:Response) => {
     if(!user) {
         throw new Errors.NotFoundError({message: `User with id: ${id} was not found.`})
     }
-    res.status(StatusCodes.OK).json({user})
+    res.status(StatusCodes.OK).json({user: {...user.users,...user?.user_info}})
     
 }
 
