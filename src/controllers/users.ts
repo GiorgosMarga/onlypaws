@@ -1,26 +1,28 @@
+// TODO: move db functions to services folder
 import "dotenv/config"
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import {  StatusCodes } from "http-status-codes";
-import { emailSchema, googleCodeSchema, otpSchema, userLoginSchema, userSchema, userUpdateSchema } from "../validators/user";
+import userSchema from "../validators/user";
+import { uuidSchema } from "../validators/uuid";
 import type { UserData, UserInsert } from "../models/user.model";
 import Errors from "../errors"
 import { db } from "../db";
 import { usersTable } from "../db/schema/users";
 import { comparePasswords, hashPassword } from "../utils/password";
 import { eq,  and,  gt } from "drizzle-orm";
-import { uuidSchema } from "../validators/uuid";
 import {getRefreshToken } from "../utils/token";
-import { createTokens, deleteRefreshToken } from "../services/token";
-import { deleteResetToken, fetchUserByEmail, fetchUserById, fetchUserFromResetToken, fetchUsers, insertPasswordResetToken, insertUser } from "../services/user";
+import tokenService from "../services/token";
+import userService from "../services/user";
 import { AuthenticatedReq } from "../middlewares/authorize";
 import generateOTP from "../utils/generateOTP";
 import { otpsTable } from "../db/schema/otps";
-import { updateUser as updateUserService,deleteUser as deleteUserService } from "../services/user";
 import generateRandomHex from "../utils/generateRandomHex";
 import convertToMs from "../utils/convertToMs";
+import otpService from "../services/otp"
+import InternalServerError from "../errors/InternalServerError";
+import BadRequestError from "../errors/BadRequestError";
 
 const TOKEN_LENGTH = 16
-// TODO: check if all bodies, params and queries are validated
 
 export const getUserByID = async (req:Request, res:Response) => {
     const {id} = req.params
@@ -32,7 +34,7 @@ export const getUserByID = async (req:Request, res:Response) => {
     }
 
 
-    const user = await fetchUserById(id)
+    const user = await userService.fetchUserById(id)
     if(!user) {
         throw new Errors.NotFoundError({message: `User with id: ${id} was not found.`})
     }
@@ -51,36 +53,36 @@ export const getUsers = async (req:Request, res:Response) => {
     if (isNaN(limit) || limit< 0){
         limit = 10
     }
-    const users = await fetchUsers({page,limit})
+    const users = await userService.fetchUsers({page,limit})
     res.status(StatusCodes.OK).json({users})
 }
 
 export const createUser = async (req:Request, res:Response) => {
-    const {error: validationError} = userSchema.validate(req.body)
+    const {error: validationError} = userSchema.userSchema.validate(req.body)
     if (validationError) {
         throw new Errors.ValidationError({message: validationError.details[0].message})
     }
 
     let user = req.body as UserInsert
-    const exists = await fetchUserByEmail(user.email)
+    const exists = await userService.fetchUserByEmail(user.email)
     if(exists){
         throw new Errors.BadRequestError({message: "Email already in use."})
     }
     user.password = hashPassword(user.password!)
-    const insertedUser = await insertUser(user)
+    const insertedUser = await userService.insertUser(user)
     res.status(StatusCodes.CREATED).json({user: insertedUser})
 }
  
 // forgotPassword is used to generate a token for password reset
 export const forgotPassword = async (req: Request, res: Response) => {
-    const {error: validationError} = emailSchema.validate(req.body)
+    const {error: validationError} = userSchema.emailSchema.validate(req.body)
     if (validationError) {
         throw new Errors.BadRequestError({message:validationError.details[0].message})
     } 
 
     const {email} = req.body
 
-    const user = await fetchUserByEmail(email)
+    const user = await userService.fetchUserByEmail(email)
     if(!user) {
         // user doesnt exist still send OK 
         res.status(StatusCodes.OK).json({message: "Success"})
@@ -90,13 +92,13 @@ export const forgotPassword = async (req: Request, res: Response) => {
     const token = generateRandomHex(TOKEN_LENGTH)
     
 
-    const passwordToken = await insertPasswordResetToken(token,user.id)
+    const passwordToken = await userService.insertPasswordResetToken(token,user.id)
     
     res.status(StatusCodes.OK).json({token:passwordToken})
 }
 
 export const resetPassword = async (req: Request, res: Response) => {
-    const {error: validationError} = userUpdateSchema.validate(req.body)
+    const {error: validationError} = userSchema.userUpdateSchema.validate(req.body)
     if (validationError) {
         throw new Errors.BadRequestError({message:validationError.details[0].message})
     } 
@@ -113,17 +115,17 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
 
-    const user = await fetchUserFromResetToken(token)
+    const user = await userService.fetchUserFromResetToken(token)
     if(!user || !user.users) {
         throw new Errors.BadRequestError({message: "Invalid token"})
     }
     user.users.password = hashPassword(password)
 
-    const updatedUser = await updateUserService(user.users)
+    const updatedUser = await userService.updateUser(user.users)
     if(!updateUser) {
         throw new Errors.NotFoundError({message: `User with id: ${user.users.id} was not found.`})
     }
-    await deleteResetToken(user.password_tokens.token)
+    await userService.deleteResetToken(user.password_tokens.token)
     res.status(StatusCodes.OK).json({user: updatedUser})
 }
 export const updateUser = async(req: AuthenticatedReq, res: Response) => {
@@ -141,7 +143,7 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
         throw new Errors.NotAuthorizedError({message:"You are not authorized to perform this action."})
     }
 
-    const {error: validationError} = userUpdateSchema.validate(req.body)
+    const {error: validationError} = userSchema.userUpdateSchema.validate(req.body)
     if(validationError){
         throw new Errors.ValidationError({message:validationError.details[0].message})
     }
@@ -152,7 +154,7 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
 
     let updatedUser = {id,...req.body}
 
-    updatedUser = await updateUserService(updatedUser)
+    updatedUser = await userService.updateUser(updatedUser)
     if(!updatedUser) {
         throw new Errors.NotFoundError({message: `User with id: ${id} was not found.`})
     }
@@ -175,7 +177,7 @@ export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
     }
 
 
-    const deletedUser = await deleteUserService(id)
+    const deletedUser = await userService.deleteUser(id)
 
     if(!deletedUser) {
         throw new Errors.NotFoundError({message: `User with id: ${id} was not found.`})
@@ -185,7 +187,7 @@ export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
 }
 
 export const loginUser = async (req: Request, res: Response) => {
-    const {error: validationError, value} = userLoginSchema.validate(req.body)
+    const {error: validationError, value} = userSchema.userLoginSchema.validate(req.body)
     if(validationError) {
         throw new Errors.ValidationError({message: validationError.details[0].message})
     }
@@ -195,7 +197,7 @@ export const loginUser = async (req: Request, res: Response) => {
         password
     } = value
 
-    const user = await fetchUserByEmail(email)
+    const user = await userService.fetchUserByEmail(email)
     // if not user.password -> user was registered using google auth
     if(!user || !user.password) {
         throw new Errors.ValidationError({message:"Invalid credentials"})
@@ -206,7 +208,7 @@ export const loginUser = async (req: Request, res: Response) => {
         throw new Errors.ValidationError({message: "invalid credentials"})
     }
 
-    const [accessToken, refreshToken] = await createTokens(user)
+    const [accessToken, refreshToken] = await tokenService.createTokens(user)
 
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
@@ -218,30 +220,37 @@ export const loginUser = async (req: Request, res: Response) => {
 export const sendOTP = async (req: AuthenticatedReq, res: Response) => {
     const user  = req.user!
     
-    const otp = generateOTP()
+    const otpNumber = generateOTP()
     const expiresAt = new Date(Date.now() + convertToMs(5,"min"))
-    const newOTP = await db.insert(otpsTable).values({otp,expiresAt, userId: user.id}).returning()
+    const otp = await otpService.insertOTP({otp: otpNumber,expiresAt, userId: user.id})
+    if(!otp){
+        throw new InternalServerError({message: "Could not generate a new OTP"})
+    }
 
-    res.status(StatusCodes.OK).json({otp: newOTP})
+    res.status(StatusCodes.OK).json({otp})
 }
 
 export const verifyUser = async (req: AuthenticatedReq, res: Response) => {
-    const {error: validationError} = otpSchema.validate(req.body)
+    const {error: validationError} = userSchema.otpSchema.validate(req.body)
     if(validationError) {
         throw new Errors.ValidationError({message: validationError.details[0].message})
     }
-    const {otp} = req.body
+    const otp = Number(req.body["otp"])
     const user = req.user!
 
-    const currentTimestamp = new Date(Date.now())
-    const fetchedOTP = await db.delete(otpsTable).where(and(eq(otpsTable.userId, user.id!),eq(otpsTable.otp,otp), gt(otpsTable.expiresAt, currentTimestamp))).returning()
+    if(isNaN(otp)){
+        throw new BadRequestError({message: "Invalid otp code"})
+    }
 
-    if(fetchedOTP.length === 0) {
-        throw new Errors.BadRequestError({message: "Invalid OTP"})
+    const currentTimestamp = new Date(Date.now())
+
+    const fetchedOTP = await otpService.deleteOTP(otp,user.id,currentTimestamp)
+    if(!fetchedOTP) {
+        throw new BadRequestError({message: "Invalid otp code"})
     }
 
     // need to update user to verified
-    await db.update(usersTable).set({isVerified: true}).where(eq(usersTable.id,user.id!))
+    await userService.verifyUser(user.id)
 
     res.status(StatusCodes.OK).json({message: "Success"})
 
@@ -253,7 +262,7 @@ export const logout = async (req: AuthenticatedReq, res: Response) => {
     const refreshTokenPayload = getRefreshToken(req)
 
     if(refreshTokenPayload) {
-        await deleteRefreshToken(refreshTokenPayload.id!,user.id!)
+        await tokenService.deleteRefreshToken(refreshTokenPayload.id!,user.id!)
     }
 
 
@@ -263,7 +272,7 @@ export const logout = async (req: AuthenticatedReq, res: Response) => {
 }
 
 export const registerGoogleUser = async (req: Request, res: Response) => {
-    const {error: validationError} = googleCodeSchema.validate(req.query)
+    const {error: validationError} = userSchema.googleCodeSchema.validate(req.query)
 
     if(validationError) {
         throw new Errors.BadRequestError({message: validationError.details[0].message})
@@ -300,9 +309,9 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
     });
 
     const userData = await userResponse.json() as UserData;
-    let user = await fetchUserByEmail(userData.email)
+    let user = await userService.fetchUserByEmail(userData.email)
     if(!user) {
-        user = await insertUser({
+        user = await userService.insertUser({
             email: userData.email,
             google_id: userData.id,
             username: userData.name,
@@ -314,7 +323,7 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
     }
 
     // TODO: change this to 15m
-    const [accessToken, refreshToken] = await createTokens(user)
+    const [accessToken, refreshToken] = await tokenService.createTokens(user)
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
     // return user only for testing

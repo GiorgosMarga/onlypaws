@@ -1,7 +1,6 @@
-import { uuid, varchar, timestamp, uniqueIndex, pgSchema, date, boolean, real, primaryKey } from "drizzle-orm/pg-core";
-import { usersTable } from "./users";
+import { uuid, timestamp, real, primaryKey } from "drizzle-orm/pg-core";
+import { schema, usersTable } from "./users";
 
-export const schema = pgSchema("onlypaws")
 export const otpsTable = schema.table("otps", {
     userId: uuid().references(() => usersTable.id),
     otp: real(),

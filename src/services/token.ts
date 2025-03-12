@@ -6,7 +6,7 @@ import {type User } from "../models/user.model"
 import convertToMs from "../utils/convertToMs"
 import { signToken } from "../utils/token"
 
-export const insertRefreshToken = async (refreshToken: RefreshTokenInsert) => {
+const insertRefreshToken = async (refreshToken: RefreshTokenInsert) => {
     try{
         const token = await db.insert(refreshTokenTable).values(refreshToken).returning()
         return token.length === 0 ? null : token[0]
@@ -15,7 +15,7 @@ export const insertRefreshToken = async (refreshToken: RefreshTokenInsert) => {
     }
 }
 
-export const deleteRefreshToken = async (refreshTokenId: string, userId: string) => {
+const deleteRefreshToken = async (refreshTokenId: string, userId: string) => {
     try{
         const token = await db.delete(refreshTokenTable).where(and(eq(refreshTokenTable.id, refreshTokenId),eq(refreshTokenTable.userId,userId), gt(refreshTokenTable.expiresAt, new Date()), eq(refreshTokenTable.isRevoked,false))).returning()
         return token.length === 0 ? null : token[0]
@@ -24,15 +24,22 @@ export const deleteRefreshToken = async (refreshTokenId: string, userId: string)
     }
 }
 
-export const revokeToken = async (tokenId: string) => {
+const revokeToken = async (tokenId: string) => {
     const token = await db.update(refreshTokenTable).set({isRevoked: true}).where(eq(refreshTokenTable.id,tokenId)).returning()
     return token.length === 0 ? null : token[0]
 }
 
-export const createTokens = async (user: User) => {
+const createTokens = async (user: User) => {
     const refreshTokenExpirationDate = new Date(Date.now() + convertToMs(7,"d")) // <- 7 days
     const accessToken = signToken({user}, process.env.JWT_ACCESS_SECRET!, {expiresIn: "1h"})
     const refreshToken = await insertRefreshToken({userId: user.id,expiresAt: refreshTokenExpirationDate})
     const signedRefreshToken = signToken({refreshToken}, process.env.JWT_REFRESH_SECRET!, {expiresIn: "7d"})    
     return [accessToken,signedRefreshToken]
+}
+
+export default {
+    createTokens,
+    revokeToken,
+    deleteRefreshToken,
+    insertRefreshToken
 }

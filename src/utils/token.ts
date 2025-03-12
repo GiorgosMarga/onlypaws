@@ -12,8 +12,6 @@ export const generateRefreshToken = (userId: string, expiresAt: Date) => {
     } as RefreshToken
 }
 
-
-// TODO: add fields in jwt
 export const signToken = (payload: any, secret: string, options?: jwt.SignOptions) => {
     return jwt.sign(payload, secret, options);
 }
