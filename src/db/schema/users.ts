@@ -9,8 +9,7 @@ export const usersTable = schema.table("users", {
     email:varchar({ length: 255 }).notNull(),
     password: varchar({length:256}), // can be null in case of google auth
     role: userRole("role").notNull().default("USER"),
-    profilePic: varchar("profile_pic",{length:255}),// TODO: move these to new table profilePic and birthdate + other information about the user
-    birthDate: date("birth_date"),
+    profilePic: varchar("profile_pic",{length:255}),
     lastLogin: date("last_login"),
     isBanned: boolean("is_banned").default(false),
     isVerified: boolean("is_verified").default(false),

@@ -1,9 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../errors/ApiError";
+import logError from "../../logger";
 
 export default function errorHandler(
-    err: unknown,
+    err: Error,
     req: Request,
     res: Response,
     next: NextFunction
@@ -20,7 +21,7 @@ export default function errorHandler(
         return
     }
 
-    console.log(err)
+    logError(err)
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: {
             message: "internal server error",
