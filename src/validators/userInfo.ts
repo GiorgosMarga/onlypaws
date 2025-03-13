@@ -19,7 +19,7 @@ const userInfoInsertSchema = Joi.object({
     dogAge: Joi.number().required(),
     dogBreed: Joi.string().min(3).max(255).required(),
     birthDate: Joi.date().less(minDOB).required()
-}).required()
+}).required().label("body")
 
 export default {
     userInfoUpdateSchema,
