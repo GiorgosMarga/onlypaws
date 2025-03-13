@@ -11,7 +11,7 @@ const userInfoUpdateSchema = Joi.object({
     dogAge: Joi.number(),
     dogBreed: Joi.string().min(3).max(255),
     birthDate: Joi.date().less(minDOB)
-})
+}).required().min(1).message("User info update body cant be empty")
 
 const userInfoInsertSchema = Joi.object({
     bio: Joi.string().min(3).max(500).required(),
@@ -19,7 +19,7 @@ const userInfoInsertSchema = Joi.object({
     dogAge: Joi.number().required(),
     dogBreed: Joi.string().min(3).max(255).required(),
     birthDate: Joi.date().less(minDOB).required()
-})
+}).required()
 
 export default {
     userInfoUpdateSchema,

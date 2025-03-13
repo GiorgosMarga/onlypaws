@@ -6,6 +6,7 @@ import errorHandler from "./middlewares/error";
 import cookieParser from "cookie-parser"
 import { tokenRouter } from "./routes/tokens";
 import { pool } from "./db";
+import { postsRouter } from "./routes/posts";
 import morgan from "morgan"
 dotenv.config()
 
@@ -14,6 +15,7 @@ app.use(morgan("dev"))
 app.use(express.json())
 app.use(cookieParser()) 
 app.use("/api/v1/users",userRouter)
+app.use("/api/v1/posts",postsRouter)
 app.use("/api/v1/tokens",tokenRouter)
 app.use("/api/v1/user-info",userInfoRouter)
 app.use(errorHandler)

@@ -152,7 +152,7 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
         req.body["password"] = hashPassword(req.body["password"])
     }
 
-    let updatedUser = {id,...req.body}
+    let updatedUser = {...req.body,id}
 
     updatedUser = await userService.updateUser(updatedUser)
     if(!updatedUser) {
