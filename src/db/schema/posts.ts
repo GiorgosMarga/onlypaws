@@ -7,5 +7,6 @@ export const postsTable = schema.table("posts", {
     tags: varchar({ length: 255 }).array().default([]),
     description: text(),
     mediaUrl: text().array().notNull(),
-    createdAt: timestamp("created_at").notNull().defaultNow()
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow().$onUpdate(() => new Date()),
 })
