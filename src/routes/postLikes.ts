@@ -1,6 +1,8 @@
 import { Router } from "express";
 import postLikesControllers from "../controllers/postLikes";
+import authenticate from "../middlewares/authenticate";
 export const postLikesRouter = Router()
 
-postLikesRouter.post("/:id",postLikesControllers.likePost)
-postLikesRouter.delete("/:id",postLikesControllers.removeLikePost)
+postLikesRouter.post("/:postId",authenticate, postLikesControllers.likePost)
+postLikesRouter.delete("/:postId",authenticate,postLikesControllers.removeLikePost)
+postLikesRouter.get("/:postId",postLikesControllers.getLikes)

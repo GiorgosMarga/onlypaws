@@ -1,9 +1,9 @@
 import { uuid ,varchar, text, timestamp} from "drizzle-orm/pg-core";
-import { schema } from "./users";
+import { schema, usersTable } from "./users";
 
 export const postsTable = schema.table("posts", {
     id: uuid().primaryKey().notNull().defaultRandom(),
-    userId: uuid("user_id").notNull(),
+    userId: uuid("user_id").notNull().references(() => usersTable.id),
     tags: varchar({ length: 255 }).array().default([]),
     description: text(),
     mediaUrl: text().array().notNull(),

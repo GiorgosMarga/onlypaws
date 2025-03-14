@@ -1,8 +1,9 @@
-import { and, eq } from "drizzle-orm"
+import {  eq } from "drizzle-orm"
 import { db } from "../db"
 import { postsTable } from "../db/schema/posts"
 import { calculateOffset } from "../utils/calculateOffset"
 import { Post, PostInsert } from "../models/post.model"
+import postAnalyticsService from "../services/postAnlytics"
 
 const getPosts = async (page:number, limit:number) => {
     const posts = await db.select().from(postsTable).limit(limit).offset(calculateOffset(page,limit))
@@ -17,7 +18,11 @@ const getPost = async (postId: string) => {
 
 const insertPost = async (post: PostInsert) => {
     const insertedPost = await db.insert(postsTable).values(post).returning()
-    return insertedPost.length === 0 ? null : insertedPost[0]
+    const result = insertedPost.length === 0 ? null : insertedPost[0]
+    if(result) {
+        await postAnalyticsService.createPostAnalytics(result.id)
+    }
+    return result
 }
 
 const updatePost = async (post: Post) => {
@@ -27,7 +32,11 @@ const updatePost = async (post: Post) => {
 
 const deletePost = async (postId: string) => {
     const deletedPost = await db.delete(postsTable).where(eq(postsTable.id,postId)).returning()
-    return deletedPost.length === 0 ? null : deletedPost[0]
+    const result = deletedPost.length === 0 ? null : deletedPost[0]
+    if(result) {
+        await postAnalyticsService.deletePostAnalytics(result.id)
+    }
+    return result
 }
 
 export default {

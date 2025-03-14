@@ -120,6 +120,20 @@
       "when": 1741866953518,
       "tag": "0016_breezy_scrambler",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1741962443137,
+      "tag": "0017_unusual_nomad",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1741962910131,
+      "tag": "0018_boring_chimera",
+      "breakpoints": true
     }
   ]
 }
