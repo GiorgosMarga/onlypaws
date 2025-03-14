@@ -8,6 +8,7 @@ import { tokenRouter } from "./routes/tokens";
 import { pool } from "./db";
 import { postsRouter } from "./routes/posts";
 import morgan from "morgan"
+import { postLikesRouter } from "./routes/postLikes";
 dotenv.config()
 
 const app: Express = express()
@@ -15,6 +16,7 @@ app.use(morgan("dev"))
 app.use(express.json())
 app.use(cookieParser()) 
 app.use("/api/v1/users",userRouter)
+app.use("/api/v1/likes", postLikesRouter)
 app.use("/api/v1/posts",postsRouter)
 app.use("/api/v1/tokens",tokenRouter)
 app.use("/api/v1/user-info",userInfoRouter)
