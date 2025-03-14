@@ -31,9 +31,9 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     res.status(StatusCodes.CREATED).json({userInfo:insertedUserInfo})
 }
 const updateUserInfo = async (req: AuthenticatedReq, res: Response) => {
-    const id = req.params["id"] as string
+    const id = req.params["userId"] as string
     const user = req.user!
-    const {error: validationError} = uuidSchema.validate(req.params)
+    const {error: validationError} = uuidSchema.validate(id)
     if(validationError) {
         throw new BadRequestError({message: validationError.details[0].message})
     }
@@ -56,9 +56,9 @@ const updateUserInfo = async (req: AuthenticatedReq, res: Response) => {
     res.status(StatusCodes.OK).json({userInfo}) 
 }
 const deleteUserInfo = async (req: AuthenticatedReq, res: Response) => {
-    const id = req.params["id"] as string
+    const id = req.params["userId"] as string
     const user = req.user!
-    const {error: validationError} = uuidSchema.validate(req.params)
+    const {error: validationError} = uuidSchema.validate(id)
     if(validationError) {
         throw new BadRequestError({message: "Invalid id"})
     }
@@ -75,10 +75,10 @@ const deleteUserInfo = async (req: AuthenticatedReq, res: Response) => {
     res.status(StatusCodes.OK).json({userInfo})
 }
 const getUserInfo = async (req: Request, res: Response) => {
-    const id = req.params["id"] as string
+    const id = req.params["userId"] as string
 
 
-    const {error: validationError} = uuidSchema.validate(req.params)
+    const {error: validationError} = uuidSchema.validate(id)
     if(validationError) {
         throw new BadRequestError({message: `Invalid id: ${id}`})
     }

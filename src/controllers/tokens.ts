@@ -40,31 +40,31 @@ export const refreshToken = async (req: Request, res: Response) => {
 }
 
 export const revokeToken = async (req: Request, res: Response) => {
-    const {id} = req.params
+    const {tokenId} = req.params
 
-    const {error: validationError} = uuidSchema.validate(req.params)
+    const {error: validationError} = uuidSchema.validate(tokenId)
     if (validationError) {
         throw new BadRequestError({message: "Invalid id form"})
     }
 
-    const revokedToken = await tokenService.revokeToken(id)
+    const revokedToken = await tokenService.revokeToken(tokenId)
     if(!revokedToken) {
-        throw new NotFoundError({message: `Token with id: ${id} was not found`})
+        throw new NotFoundError({message: `Token with id: ${tokenId} was not found`})
     }
 
     res.status(StatusCodes.OK).json({message: "Success"})
 }
 export const revokeTokenForUser = async (req: Request, res: Response) => {
-    const {id} = req.params
+    const {userId} = req.params
 
-    const {error: validationError} = uuidSchema.validate(req.params)
+    const {error: validationError} = uuidSchema.validate(userId)
     if (validationError) {
         throw new BadRequestError({message: "Invalid id form"})
     }
 
-    const revokedToken = await tokenService.revokeTokenForUser(id)
+    const revokedToken = await tokenService.revokeTokenForUser(userId)
     if(!revokedToken) {
-        throw new NotFoundError({message: `User with id: ${id} was not found`})
+        throw new NotFoundError({message: `User with id: ${userId} was not found`})
     }
 
     res.status(StatusCodes.OK).json({message: "Success"})

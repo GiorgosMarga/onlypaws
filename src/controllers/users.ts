@@ -6,16 +6,12 @@ import userSchema from "../validators/user";
 import { uuidSchema } from "../validators/uuid";
 import type { UserData, UserInsert } from "../models/user.model";
 import Errors from "../errors"
-import { db } from "../db";
-import { usersTable } from "../db/schema/users";
 import { comparePasswords, hashPassword } from "../utils/password";
-import { eq,  and,  gt } from "drizzle-orm";
 import {getRefreshToken } from "../utils/token";
 import tokenService from "../services/token";
 import userService from "../services/user";
 import { AuthenticatedReq } from "../middlewares/authorize";
 import generateOTP from "../utils/generateOTP";
-import { otpsTable } from "../db/schema/otps";
 import generateRandomHex from "../utils/generateRandomHex";
 import convertToMs from "../utils/convertToMs";
 import otpService from "../services/otp"
@@ -25,9 +21,9 @@ import BadRequestError from "../errors/BadRequestError";
 const TOKEN_LENGTH = 16
 
 export const getUserByID = async (req:Request, res:Response) => {
-    const {id} = req.params
+    const {userId: id} = req.params
 
-    const {error: idError} = uuidSchema.validate(req.params)
+    const {error: idError} = uuidSchema.validate(id)
 
     if(idError) {
         throw new Errors.BadRequestError({message:"invalid id format"})
@@ -129,9 +125,9 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.status(StatusCodes.OK).json({user: updatedUser})
 }
 export const updateUser = async(req: AuthenticatedReq, res: Response) => {
-    const {id} = req.params
+    const {userId: id} = req.params
 
-    const {error: idError} = uuidSchema.validate(req.params)
+    const {error: idError} = uuidSchema.validate(id)
 
     if(idError) {
         throw new Errors.BadRequestError({message:"invalid id format"})
@@ -163,7 +159,7 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
 }
 
 export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
-    const {id} = req.params
+    const {userId: id} = req.params
 
     const user = req.user!
 
@@ -171,7 +167,7 @@ export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
         throw new Errors.NotAuthorizedError({message:"You are not authorized to perform this action."})
     }
 
-    const {error: idError} = uuidSchema.validate(req.params)
+    const {error: idError} = uuidSchema.validate(id)
     if(idError) {
         throw new Errors.BadRequestError({message:"invalid id format"})
     }
@@ -336,4 +332,16 @@ export const generateGoogleUserCode = async (req: Request, res:Response) => {
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=openid email profile`;
     console.log("Redirecting to:",authUrl)
     res.redirect(authUrl);
+}
+
+
+export const whoAmI = async (req: AuthenticatedReq, res: Response) => {
+    const user = req.user!
+
+    const fetchedUser = await userService.fetchUserByEmail(user.email)
+    if(!fetchedUser) {
+        throw new Errors.NotFoundError({message: `User with id: ${user.id} doesn't exist`})
+    }
+
+    res.status(StatusCodes.OK).json({user: fetchedUser})
 }

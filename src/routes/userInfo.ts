@@ -4,7 +4,7 @@ import authenticate from "../middlewares/authenticate"
 
 export const userInfoRouter = Router()
 
-userInfoRouter.get("/:id", userInfoControllers.getUserInfo)
+userInfoRouter.get("/:userId", userInfoControllers.getUserInfo)
 userInfoRouter.post("/",authenticate, userInfoControllers.createUserInfo)
-userInfoRouter.patch("/:id", authenticate,userInfoControllers.updateUserInfo)
-userInfoRouter.delete("/:id", authenticate,userInfoControllers.deleteUserInfo)
+userInfoRouter.patch("/:userId", authenticate,userInfoControllers.updateUserInfo)
+userInfoRouter.delete("/:userId", authenticate,userInfoControllers.deleteUserInfo)

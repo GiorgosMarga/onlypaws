@@ -6,7 +6,7 @@ import authenticate from "../middlewares/authenticate";
 export const postsRouter = Router()
 
 postsRouter.get("/",postsControllers.getPosts)
-postsRouter.get("/:id",postsControllers.getPost)
-postsRouter.patch("/:id", authenticate,authorize,postsControllers.updatePost)
-postsRouter.delete("/:id",authenticate,authorize, postsControllers.deletePost)
+postsRouter.get("/:postId",postsControllers.getPost)
+postsRouter.patch("/:postId", authenticate,authorize,postsControllers.updatePost)
+postsRouter.delete("/:postId",authenticate,authorize, postsControllers.deletePost)
 postsRouter.post("/",authenticate, postsControllers.createPost)

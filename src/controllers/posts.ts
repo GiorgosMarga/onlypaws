@@ -8,8 +8,8 @@ import parseJoiErrors from "../utils/parseJoiErrors";
 import Errors from "../errors"
 
 const updatePost = async (req: AuthenticatedReq, res: Response) => {
-    const postId = req.params["id"] as string
-    const {error: idError} = uuidSchema.validate(req.params)
+    const postId = req.params["postId"] as string
+    const {error: idError} = uuidSchema.validate(postId)
 
     if(idError) {
         throw new Errors.BadRequestError({message: `Invalid id: ${postId}`})
@@ -60,16 +60,16 @@ const getPosts = async (req: Request, res: Response) => {
 }
 
 const getPost = async (req: Request, res: Response) => {
-    const id = req.params["id"] as string
+    const postId = req.params["postId"] as string
 
-    const {error: validationError} = uuidSchema.validate(req.params)
+    const {error: validationError} = uuidSchema.validate(postId)
     if(validationError) {
-        throw new  Errors.BadRequestError({message: "Invalid id: "+id})
+        throw new  Errors.BadRequestError({message: "Invalid id: "+postId})
     }
 
-    const post = await postsService.getPost(id)
+    const post = await postsService.getPost(postId)
     if(!post) {
-        throw new  Errors.NotFoundError({message: `Post with id: ${id} doesn't exist.`})
+        throw new  Errors.NotFoundError({message: `Post with id: ${postId} doesn't exist.`})
     }
 
     res.status(StatusCodes.OK).json({post})
@@ -90,8 +90,8 @@ const createPost = async (req: AuthenticatedReq, res: Response) => {
 
 
 const deletePost = async (req: AuthenticatedReq, res: Response) => {
-    const postId = req.params["id"] as string
-    const {error: idError} = uuidSchema.validate(req.params)
+    const postId = req.params["postId"] as string
+    const {error: idError} = uuidSchema.validate(postId)
     if(idError) {
         throw new Errors.BadRequestError({message: "Invalid id: "+postId})
     }

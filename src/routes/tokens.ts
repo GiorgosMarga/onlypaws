@@ -8,5 +8,5 @@ export const tokenRouter = Router()
 
 tokenRouter.get("/refresh", refreshToken)
 tokenRouter.patch("/:id",authenticate,authorize, revokeToken)
-tokenRouter.patch("/user/:id",authenticate,authorize, revokeToken)
+tokenRouter.patch("/user/:userId",authenticate,authorize, revokeToken)
 
