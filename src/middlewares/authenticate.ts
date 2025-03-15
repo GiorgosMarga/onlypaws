@@ -2,9 +2,10 @@ import "dotenv/config"
 import { NextFunction, Request, Response } from "express";
 import { AccessTokenJWT, validateToken } from "../utils/token";
 import NotAuthorizedError from "../errors/NotAuthorizedError";
+import { AuthenticatedReq } from "./authorize";
 
 export default function authenticate(
-    req: Request,
+    req: AuthenticatedReq,
     res: Response,
     next: NextFunction 
 ){

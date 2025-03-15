@@ -134,6 +134,20 @@
       "when": 1741962910131,
       "tag": "0018_boring_chimera",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1741985961650,
+      "tag": "0019_dark_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1742040831930,
+      "tag": "0020_woozy_roland_deschain",
+      "breakpoints": true
     }
   ]
 }

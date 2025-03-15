@@ -4,16 +4,20 @@ import { postsTable } from "../db/schema/posts"
 import { calculateOffset } from "../utils/calculateOffset"
 import { Post, PostInsert } from "../models/post.model"
 import postAnalyticsService from "../services/postAnlytics"
+import { postAnalyticsTable } from "../db/schema/postLikes"
 
 const getPosts = async (page:number, limit:number) => {
-    const posts = await db.select().from(postsTable).limit(limit).offset(calculateOffset(page,limit))
-    return posts
+    const posts = await db.select({likes: postAnalyticsTable.likes, postsTable})
+                        .from(postsTable)
+                        .leftJoin(postAnalyticsTable,eq(postsTable.id, postAnalyticsTable.postId))
+                        .limit(limit).offset(calculateOffset(page,limit))
+    return posts.map((p) => ({...p.postsTable,likes: p.likes}))
 }
 
 
 const getPost = async (postId: string) => {
-    const posts = await db.select().from(postsTable).where(eq(postsTable.id,postId))
-    return posts.length === 0 ? null : posts[0]
+    const posts = await db.select({likes: postAnalyticsTable.likes, postsTable}).from(postsTable).leftJoin(postAnalyticsTable,eq(postsTable.id, postAnalyticsTable.postId)).where(eq(postsTable.id,postId))
+    return posts.length === 0 ? null : {...posts[0].postsTable, likes: posts[0].likes}
 }
 
 const insertPost = async (post: PostInsert) => {

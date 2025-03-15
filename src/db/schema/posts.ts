@@ -3,7 +3,7 @@ import { schema, usersTable } from "./users";
 
 export const postsTable = schema.table("posts", {
     id: uuid().primaryKey().notNull().defaultRandom(),
-    userId: uuid("user_id").notNull().references(() => usersTable.id),
+    userId: uuid("user_id").notNull().references(() => usersTable.id,{ onDelete: "cascade" }),
     tags: varchar({ length: 255 }).array().default([]),
     description: text(),
     mediaUrl: text().array().notNull(),

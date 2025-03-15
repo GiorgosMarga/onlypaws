@@ -15,8 +15,6 @@ import generateOTP from "../utils/generateOTP";
 import generateRandomHex from "../utils/generateRandomHex";
 import convertToMs from "../utils/convertToMs";
 import otpService from "../services/otp"
-import InternalServerError from "../errors/InternalServerError";
-import BadRequestError from "../errors/BadRequestError";
 
 const TOKEN_LENGTH = 16
 
@@ -66,7 +64,16 @@ export const createUser = async (req:Request, res:Response) => {
     }
     user.password = hashPassword(user.password!)
     const insertedUser = await userService.insertUser(user)
-    res.status(StatusCodes.CREATED).json({user: insertedUser})
+    if(!insertedUser){
+        throw new Errors.InternalServerError({message: "Could not create user"})
+    }
+
+    const [accessToken, refreshToken] = await tokenService.createTokens(insertedUser)
+
+    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
+    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
+    // return user only for testing
+    res.status(StatusCodes.CREATED).json({user:insertedUser, access_token: accessToken, refresh_token: refreshToken})
 }
  
 // forgotPassword is used to generate a token for password reset
@@ -220,7 +227,7 @@ export const sendOTP = async (req: AuthenticatedReq, res: Response) => {
     const expiresAt = new Date(Date.now() + convertToMs(5,"min"))
     const otp = await otpService.insertOTP({otp: otpNumber,expiresAt, userId: user.id})
     if(!otp){
-        throw new InternalServerError({message: "Could not generate a new OTP"})
+        throw new Errors.InternalServerError({message: "Could not generate a new OTP"})
     }
 
     res.status(StatusCodes.OK).json({otp})
@@ -235,14 +242,14 @@ export const verifyUser = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
 
     if(isNaN(otp)){
-        throw new BadRequestError({message: "Invalid otp code"})
+        throw new Errors.BadRequestError({message: "Invalid otp code"})
     }
 
     const currentTimestamp = new Date(Date.now())
 
     const fetchedOTP = await otpService.deleteOTP(otp,user.id,currentTimestamp)
     if(!fetchedOTP) {
-        throw new BadRequestError({message: "Invalid otp code"})
+        throw new Errors.BadRequestError({message: "Invalid otp code"})
     }
 
     // need to update user to verified
@@ -323,7 +330,7 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
     // return user only for testing
-    res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: refreshToken, userData})
+    res.status(StatusCodes.CREATED).json({user, access_token: accessToken, refresh_token: refreshToken, userData})
 
 }
 

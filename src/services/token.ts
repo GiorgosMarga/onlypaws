@@ -2,7 +2,7 @@ import { and, eq, gt } from "drizzle-orm"
 import { db } from "../db"
 import { refreshTokenTable } from "../db/schema/refreshTokens"
 import {type RefreshTokenInsert} from "../models/refreshToken.model"
-import {type User } from "../models/user.model"
+import {UserInsert, type User } from "../models/user.model"
 import convertToMs from "../utils/convertToMs"
 import { signToken } from "../utils/token"
 

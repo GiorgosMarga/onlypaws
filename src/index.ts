@@ -11,7 +11,7 @@ import morgan from "morgan"
 import { postLikesRouter } from "./routes/postLikes";
 dotenv.config()
 
-const app: Express = express()
+export const app: Express = express()
 app.use(morgan("dev"))
 app.use(express.json())
 app.use(cookieParser()) 

@@ -6,6 +6,7 @@ import type {AuthenticatedReq} from "../middlewares/authorize"
 import postsValidator from "../validators/post"
 import parseJoiErrors from "../utils/parseJoiErrors";
 import Errors from "../errors"
+import post from "../validators/post";
 
 const updatePost = async (req: AuthenticatedReq, res: Response) => {
     const postId = req.params["postId"] as string

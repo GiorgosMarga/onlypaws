@@ -7,7 +7,8 @@
     "db/generate": "npx drizzle-kit generate",
     "db/push": "npx drizzle-kit migrate",
     "db/pull": "npx drizzle-kit pull",
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "test": "jest --detectOpenHandles"
   },
   "keywords": [],
   "author": "",
