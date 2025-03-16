@@ -9,6 +9,7 @@ import { pool } from "./db";
 import { postsRouter } from "./routes/posts";
 import morgan from "morgan"
 import { postLikesRouter } from "./routes/postLikes";
+import { followersRouter } from "./routes/followers";
 dotenv.config()
 
 export const app: Express = express()
@@ -20,6 +21,7 @@ app.use("/api/v1/likes", postLikesRouter)
 app.use("/api/v1/posts",postsRouter)
 app.use("/api/v1/tokens",tokenRouter)
 app.use("/api/v1/user-info",userInfoRouter)
+app.use("/api/v1/follows",followersRouter)
 app.use(errorHandler)
 
 const server = app.listen(process.env.PORT, () => console.log(`Server is running at :${process.env.PORT}`))
