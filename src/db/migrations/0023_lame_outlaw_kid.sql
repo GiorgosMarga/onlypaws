@@ -1,0 +1,2 @@
+ALTER TABLE "onlypaws"."comments" ADD COLUMN "parent_id" uuid;--> statement-breakpoint
+ALTER TABLE "onlypaws"."comments" ADD CONSTRAINT "comments_parent_id_comments_id_fk" FOREIGN KEY ("parent_id") REFERENCES "onlypaws"."comments"("id") ON DELETE cascade ON UPDATE no action;

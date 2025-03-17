@@ -10,6 +10,8 @@ import { postsRouter } from "./routes/posts";
 import morgan from "morgan"
 import { postLikesRouter } from "./routes/postLikes";
 import { followersRouter } from "./routes/followers";
+import { commentsRouter } from "./routes/comments";
+import notFound from "./middlewares/notFound"
 dotenv.config()
 
 export const app: Express = express()
@@ -22,6 +24,8 @@ app.use("/api/v1/posts",postsRouter)
 app.use("/api/v1/tokens",tokenRouter)
 app.use("/api/v1/user-info",userInfoRouter)
 app.use("/api/v1/follows",followersRouter)
+app.use("/api/v1/comments",commentsRouter)
+app.use(notFound)
 app.use(errorHandler)
 
 const server = app.listen(process.env.PORT, () => console.log(`Server is running at :${process.env.PORT}`))
