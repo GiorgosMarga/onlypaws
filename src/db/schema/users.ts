@@ -5,6 +5,7 @@ export const userRole = schema.enum("userRole", ["USER","ADMIN"])
 export const usersTable = schema.table("users", {
     id: uuid().primaryKey().defaultRandom(),
     google_id: varchar("google_id").unique(),
+    github_id: varchar("github_id").unique(),
     username: varchar({length:255}).notNull(),
     email:varchar({ length: 255 }).notNull(),
     password: varchar({length:256}), // can be null in case of google auth

@@ -2,7 +2,7 @@ import { integer, primaryKey, text, timestamp, uuid,varchar } from "drizzle-orm/
 import { schema, usersTable } from "./users";
 
 export const userInfoTable = schema.table("user_info", {
-    userId: uuid().references(() => usersTable.id).notNull().primaryKey(),
+    userId: uuid().references(() => usersTable.id, {onDelete: "cascade"}).notNull().primaryKey(),
     birthDate: timestamp("birth_date").notNull(),
     bio: text(),
     dogName: varchar("dog_name", {length: 255}).notNull(),

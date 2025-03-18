@@ -169,6 +169,20 @@
       "when": 1742148640081,
       "tag": "0023_lame_outlaw_kid",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1742291500175,
+      "tag": "0024_brief_bug",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1742291646042,
+      "tag": "0025_redundant_mesmero",
+      "breakpoints": true
     }
   ]
 }

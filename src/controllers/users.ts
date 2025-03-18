@@ -15,6 +15,7 @@ import generateOTP from "../utils/generateOTP";
 import generateRandomHex from "../utils/generateRandomHex";
 import convertToMs from "../utils/convertToMs";
 import otpService from "../services/otp"
+import errors from "../errors";
 
 const TOKEN_LENGTH = 16
 
@@ -332,6 +333,79 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
     // return user only for testing
     res.status(StatusCodes.CREATED).json({user, access_token: accessToken, refresh_token: refreshToken, userData})
 
+}
+export const registerGithubUser = async (req: Request, res: Response) => {
+    // const {error: validationError} = userSchema.googleCodeSchema.validate(req.query)
+
+    // if(validationError) {
+    //     throw new Errors.BadRequestError({message: validationError.details[0].message})
+    // }
+
+
+    const code = req.query["code"] as string
+    console.log({code})
+    // TODO: find these urls
+    const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: { "accept": "application/json","Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+            client_id: process.env.GITHUB_CLIENT_ID!,
+            client_secret: process.env.GITHUB_CLIENT_SECRET!,
+            code
+        })
+    });
+
+    if(!tokenResponse.ok) {
+        const errorData = await tokenResponse.text();
+        throw new Errors.InternalServerError({message: "Error fetching token "+ errorData})
+    }
+    
+    const data = await tokenResponse.json() 
+    if(!data.access_token) {
+        throw new Errors.InternalServerError({message: "No access_token: "+data})
+    }
+
+    const userResponse = await fetch("https://api.github.com/user", {
+        method: "GET",
+        headers: { Authorization: `Bearer ${data.access_token}` },
+    });
+
+    const userData = await userResponse.json();
+
+    const emailResponse = await fetch("https://api.github.com/user/emails", {
+    headers: { Authorization: `Bearer ${data.access_token}` },
+    });
+    const emails = await emailResponse.json();
+
+    // Get primary, verified email
+    const primaryEmail = emails.find((email: any) => email.primary && email.verified)?.email || null;
+    if(!primaryEmail) {
+        throw new errors.BadRequestError({message: "User has no email registered"})
+    }
+    let user = await userService.fetchUserByEmail(primaryEmail)
+    if(!user) {
+        user = await userService.insertUser({
+            email: primaryEmail,
+            github_id: userData.id,
+            username: userData.name || userData.login,
+            profilePic: userData.avatar_url
+        })
+        if(!user) {
+            throw new Errors.InternalServerError({message:"Error registering user"})
+        }
+    }
+
+    // TODO: change this to 15m
+    const [accessToken, refreshToken] = await tokenService.createTokens(user)
+    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
+    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
+    // return user only for testing
+    res.status(StatusCodes.CREATED).json({user, access_token: accessToken, refresh_token: refreshToken})
+}
+
+export const generateGithubUserCode = async (req: Request, res: Response) => {
+    const redirectUri = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&scope=user:email`;
+    res.redirect(redirectUri);
 }
 
 export const generateGoogleUserCode = async (req: Request, res:Response) => {

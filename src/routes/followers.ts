@@ -4,7 +4,8 @@ import authenticate from "../middlewares/authenticate";
 
 export const followersRouter = Router()
 
-followersRouter.get("/followers/:userId",authenticate, followersControllers.getFollowers)
-followersRouter.get("/followings/:userId",authenticate, followersControllers.getFollowings)
-followersRouter.post("/:userId",authenticate, followersControllers.follow)
-followersRouter.delete("/:userId",authenticate, followersControllers.unfollow)
+followersRouter.use(authenticate)
+followersRouter.get("/followers/:userId", followersControllers.getFollowers)
+followersRouter.get("/followings/:userId", followersControllers.getFollowings)
+followersRouter.post("/:userId", followersControllers.follow)
+followersRouter.delete("/:userId", followersControllers.unfollow)
