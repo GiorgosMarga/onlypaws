@@ -13,3 +13,11 @@ export type UserData = {
     family_name: string,
     picture: string
   }
+
+  export type GithubUserData = {
+    id: string,
+    email: string | null,
+    name: string|null,
+    login: string,
+    avatar_url: string
+  }

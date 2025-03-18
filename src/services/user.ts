@@ -25,6 +25,7 @@ const insertUser = async (user: UserInsert) => {
 }
 
 const updateUser = async (user: User) => {
+    user.updatedAt = new Date(Date.now())
     const updatedUser = await db.update(usersTable).set(user).where(eq(usersTable.id, user.id)).returning()
     return updatedUser.length === 0 ? null : updatedUser[0]
 }

@@ -4,7 +4,7 @@ import type { Request, Response } from "express";
 import {  StatusCodes } from "http-status-codes";
 import userSchema from "../validators/user";
 import { uuidSchema } from "../validators/uuid";
-import type { UserData, UserInsert } from "../models/user.model";
+import type { GithubUserData, UserData, UserInsert } from "../models/user.model";
 import Errors from "../errors"
 import { comparePasswords, hashPassword } from "../utils/password";
 import {getRefreshToken } from "../utils/token";
@@ -370,7 +370,7 @@ export const registerGithubUser = async (req: Request, res: Response) => {
         headers: { Authorization: `Bearer ${data.access_token}` },
     });
 
-    const userData = await userResponse.json();
+    const userData = await userResponse.json() as GithubUserData;
 
     const emailResponse = await fetch("https://api.github.com/user/emails", {
     headers: { Authorization: `Bearer ${data.access_token}` },
@@ -393,6 +393,8 @@ export const registerGithubUser = async (req: Request, res: Response) => {
         if(!user) {
             throw new Errors.InternalServerError({message:"Error registering user"})
         }
+    }else if (!user.github_id) {
+        await userService.updateUser({...user,github_id: userData.id})
     }
 
     // TODO: change this to 15m
