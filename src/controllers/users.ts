@@ -5,7 +5,6 @@ import {  StatusCodes } from "http-status-codes";
 import userSchema from "../validators/user";
 import { uuidSchema } from "../validators/uuid";
 import type { GithubUserData, UserData, UserInsert } from "../models/user.model";
-import Errors from "../errors"
 import { comparePasswords, hashPassword } from "../utils/password";
 import {getRefreshToken } from "../utils/token";
 import tokenService from "../services/token";
@@ -25,13 +24,13 @@ export const getUserByID = async (req:Request, res:Response) => {
     const {error: idError} = uuidSchema.validate(id)
 
     if(idError) {
-        throw new Errors.BadRequestError({message:"invalid id format"})
+        throw new errors.BadRequestError({message:"invalid id format"})
     }
 
 
     const user = await userService.fetchUserById(id)
     if(!user) {
-        throw new Errors.NotFoundError({message: `User with id: ${id} was not found.`})
+        throw new errors.NotFoundError({message: `User with id: ${id} was not found.`})
     }
     res.status(StatusCodes.OK).json({user: {...user.users,...user?.user_info}})
     
@@ -55,18 +54,18 @@ export const getUsers = async (req:Request, res:Response) => {
 export const createUser = async (req:Request, res:Response) => {
     const {error: validationError} = userSchema.userSchema.validate(req.body)
     if (validationError) {
-        throw new Errors.ValidationError({message: validationError.details[0].message})
+        throw new errors.ValidationError({message: validationError.details[0].message})
     }
 
     let user = req.body as UserInsert
     const exists = await userService.fetchUserByEmail(user.email)
     if(exists){
-        throw new Errors.BadRequestError({message: "Email already in use."})
+        throw new errors.BadRequestError({message: "Email already in use."})
     }
     user.password = hashPassword(user.password!)
     const insertedUser = await userService.insertUser(user)
     if(!insertedUser){
-        throw new Errors.InternalServerError({message: "Could not create user"})
+        throw new errors.InternalServerError({message: "Could not create user"})
     }
 
     const [accessToken, refreshToken] = await tokenService.createTokens(insertedUser)
@@ -81,7 +80,7 @@ export const createUser = async (req:Request, res:Response) => {
 export const forgotPassword = async (req: Request, res: Response) => {
     const {error: validationError} = userSchema.emailSchema.validate(req.body)
     if (validationError) {
-        throw new Errors.BadRequestError({message:validationError.details[0].message})
+        throw new errors.BadRequestError({message:validationError.details[0].message})
     } 
 
     const {email} = req.body
@@ -104,7 +103,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 export const resetPassword = async (req: Request, res: Response) => {
     const {error: validationError} = userSchema.userUpdateSchema.validate(req.body)
     if (validationError) {
-        throw new Errors.BadRequestError({message:validationError.details[0].message})
+        throw new errors.BadRequestError({message:validationError.details[0].message})
     } 
     const { password } = req.body
 
@@ -115,19 +114,19 @@ export const resetPassword = async (req: Request, res: Response) => {
     
     // TODO: fix 2 * token_length
     if(!token || token.length !== 2*TOKEN_LENGTH) {
-        throw new Errors.BadRequestError({message:"A valid token must be provided."})
+        throw new errors.BadRequestError({message:"A valid token must be provided."})
     }
 
 
     const user = await userService.fetchUserFromResetToken(token)
     if(!user || !user.users) {
-        throw new Errors.BadRequestError({message: "Invalid token"})
+        throw new errors.BadRequestError({message: "Invalid token"})
     }
     user.users.password = hashPassword(password)
 
     const updatedUser = await userService.updateUser(user.users)
     if(!updateUser) {
-        throw new Errors.NotFoundError({message: `User with id: ${user.users.id} was not found.`})
+        throw new errors.NotFoundError({message: `User with id: ${user.users.id} was not found.`})
     }
     await userService.deleteResetToken(user.password_tokens.token)
     res.status(StatusCodes.OK).json({user: updatedUser})
@@ -138,18 +137,18 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
     const {error: idError} = uuidSchema.validate(id)
 
     if(idError) {
-        throw new Errors.BadRequestError({message:"invalid id format"})
+        throw new errors.BadRequestError({message:"invalid id format"})
     }
 
     const user = req.user!
 
     if(user.id !== id && user.role != "ADMIN") {
-        throw new Errors.NotAuthorizedError({message:"You are not authorized to perform this action."})
+        throw new errors.NotAuthorizedError({message:"You are not authorized to perform this action."})
     }
 
     const {error: validationError} = userSchema.userUpdateSchema.validate(req.body)
     if(validationError){
-        throw new Errors.ValidationError({message:validationError.details[0].message})
+        throw new errors.ValidationError({message:validationError.details[0].message})
     }
 
     if(req.body["password"]) {
@@ -160,7 +159,7 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
 
     updatedUser = await userService.updateUser(updatedUser)
     if(!updatedUser) {
-        throw new Errors.NotFoundError({message: `User with id: ${id} was not found.`})
+        throw new errors.NotFoundError({message: `User with id: ${id} was not found.`})
     }
 
     res.status(StatusCodes.OK).json({user: updatedUser})
@@ -172,19 +171,19 @@ export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
 
     if(user.id !== id && user.role != "ADMIN") {
-        throw new Errors.NotAuthorizedError({message:"You are not authorized to perform this action."})
+        throw new errors.NotAuthorizedError({message:"You are not authorized to perform this action."})
     }
 
     const {error: idError} = uuidSchema.validate(id)
     if(idError) {
-        throw new Errors.BadRequestError({message:"invalid id format"})
+        throw new errors.BadRequestError({message:"invalid id format"})
     }
 
 
     const deletedUser = await userService.deleteUser(id)
 
     if(!deletedUser) {
-        throw new Errors.NotFoundError({message: `User with id: ${id} was not found.`})
+        throw new errors.NotFoundError({message: `User with id: ${id} was not found.`})
     }
 
     res.status(StatusCodes.OK).json({user: deletedUser})
@@ -193,7 +192,7 @@ export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
     const {error: validationError, value} = userSchema.userLoginSchema.validate(req.body)
     if(validationError) {
-        throw new Errors.ValidationError({message: validationError.details[0].message})
+        throw new errors.ValidationError({message: validationError.details[0].message})
     }
 
     const {
@@ -204,12 +203,12 @@ export const loginUser = async (req: Request, res: Response) => {
     const user = await userService.fetchUserByEmail(email)
     // if not user.password -> user was registered using google auth
     if(!user || !user.password) {
-        throw new Errors.ValidationError({message:"Invalid credentials"})
+        throw new errors.ValidationError({message:"Invalid credentials"})
     }
 
     
     if(!comparePasswords(user.password, password )){
-        throw new Errors.ValidationError({message: "invalid credentials"})
+        throw new errors.ValidationError({message: "invalid credentials"})
     }
 
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
@@ -228,7 +227,7 @@ export const sendOTP = async (req: AuthenticatedReq, res: Response) => {
     const expiresAt = new Date(Date.now() + convertToMs(5,"min"))
     const otp = await otpService.insertOTP({otp: otpNumber,expiresAt, userId: user.id})
     if(!otp){
-        throw new Errors.InternalServerError({message: "Could not generate a new OTP"})
+        throw new errors.InternalServerError({message: "Could not generate a new OTP"})
     }
 
     res.status(StatusCodes.OK).json({otp})
@@ -237,20 +236,20 @@ export const sendOTP = async (req: AuthenticatedReq, res: Response) => {
 export const verifyUser = async (req: AuthenticatedReq, res: Response) => {
     const {error: validationError} = userSchema.otpSchema.validate(req.body)
     if(validationError) {
-        throw new Errors.ValidationError({message: validationError.details[0].message})
+        throw new errors.ValidationError({message: validationError.details[0].message})
     }
     const otp = Number(req.body["otp"])
     const user = req.user!
 
     if(isNaN(otp)){
-        throw new Errors.BadRequestError({message: "Invalid otp code"})
+        throw new errors.BadRequestError({message: "Invalid otp code"})
     }
 
     const currentTimestamp = new Date(Date.now())
 
     const fetchedOTP = await otpService.deleteOTP(otp,user.id,currentTimestamp)
     if(!fetchedOTP) {
-        throw new Errors.BadRequestError({message: "Invalid otp code"})
+        throw new errors.BadRequestError({message: "Invalid otp code"})
     }
 
     // need to update user to verified
@@ -279,7 +278,7 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
     const {error: validationError} = userSchema.googleCodeSchema.validate(req.query)
 
     if(validationError) {
-        throw new Errors.BadRequestError({message: validationError.details[0].message})
+        throw new errors.BadRequestError({message: validationError.details[0].message})
     }
 
 
@@ -299,12 +298,12 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
 
     if(!tokenResponse.ok) {
         const errorData = await tokenResponse.text();
-        throw new Errors.InternalServerError({message: "Error fetching token "+ errorData})
+        throw new errors.InternalServerError({message: "Error fetching token "+ errorData})
     }
     
     const data = await tokenResponse.json() 
     if(!data.access_token) {
-        throw new Errors.InternalServerError({message: "No access_token: "+data})
+        throw new errors.InternalServerError({message: "No access_token: "+data})
     }
 
     const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -322,8 +321,11 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
             profilePic: userData.picture
         })
         if(!user) {
-            throw new Errors.InternalServerError({message:"Error registering user"})
+            throw new errors.InternalServerError({message:"Error registering user"})
         }
+    }else if (!user.google_id) {
+        // user already exists in the db, link account to the google account as well
+        await userService.updateUser({...user,google_id: userData.id})
     }
 
     // TODO: change this to 15m
@@ -335,15 +337,11 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
 
 }
 export const registerGithubUser = async (req: Request, res: Response) => {
-    // const {error: validationError} = userSchema.googleCodeSchema.validate(req.query)
-
-    // if(validationError) {
-    //     throw new Errors.BadRequestError({message: validationError.details[0].message})
-    // }
-
 
     const code = req.query["code"] as string
-    console.log({code})
+    if(!code) {
+        throw new errors.BadRequestError({message:"Missing code"})
+    }
     // TODO: find these urls
     const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
@@ -357,21 +355,22 @@ export const registerGithubUser = async (req: Request, res: Response) => {
 
     if(!tokenResponse.ok) {
         const errorData = await tokenResponse.text();
-        throw new Errors.InternalServerError({message: "Error fetching token "+ errorData})
+        throw new errors.InternalServerError({message: "Error fetching token "+ errorData})
     }
     
     const data = await tokenResponse.json() 
     if(!data.access_token) {
-        throw new Errors.InternalServerError({message: "No access_token: "+data})
+        throw new errors.InternalServerError({message: "No access_token: "+data})
     }
 
     const userResponse = await fetch("https://api.github.com/user", {
         method: "GET",
         headers: { Authorization: `Bearer ${data.access_token}` },
     });
-
+    
     const userData = await userResponse.json() as GithubUserData;
-
+    
+    // find user's email, gihub some times doesnt returnthe email even if it is public?
     const emailResponse = await fetch("https://api.github.com/user/emails", {
     headers: { Authorization: `Bearer ${data.access_token}` },
     });
@@ -391,7 +390,7 @@ export const registerGithubUser = async (req: Request, res: Response) => {
             profilePic: userData.avatar_url
         })
         if(!user) {
-            throw new Errors.InternalServerError({message:"Error registering user"})
+            throw new errors.InternalServerError({message:"Error registering user"})
         }
     }else if (!user.github_id) {
         await userService.updateUser({...user,github_id: userData.id})
@@ -423,7 +422,7 @@ export const whoAmI = async (req: AuthenticatedReq, res: Response) => {
 
     const fetchedUser = await userService.fetchUserByEmail(user.email)
     if(!fetchedUser) {
-        throw new Errors.NotFoundError({message: `User with id: ${user.id} doesn't exist`})
+        throw new errors.NotFoundError({message: `User with id: ${user.id} doesn't exist`})
     }
 
     res.status(StatusCodes.OK).json({user: fetchedUser})
