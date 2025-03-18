@@ -15,6 +15,8 @@ import notFound from "./middlewares/notFound"
 dotenv.config()
 
 export const app: Express = express()
+
+
 app.use(morgan("dev"))
 app.use(express.json())
 app.use(cookieParser()) 

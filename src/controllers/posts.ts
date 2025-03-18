@@ -6,8 +6,11 @@ import type {AuthenticatedReq} from "../middlewares/authorize"
 import postsValidator from "../validators/post"
 import parseJoiErrors from "../utils/parseJoiErrors";
 import Errors from "../errors"
-import post from "../validators/post";
-
+import "dotenv/config"
+import errors from "../errors";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { s3Client } from "../s3Bucket";
+import { randomUUID } from "crypto";
 const updatePost = async (req: AuthenticatedReq, res: Response) => {
     const postId = req.params["postId"] as string
     const {error: idError} = uuidSchema.validate(postId)
@@ -77,16 +80,34 @@ const getPost = async (req: Request, res: Response) => {
 }
 
 const createPost = async (req: AuthenticatedReq, res: Response) => {
-    const {error: validationError} = postsValidator.createPostSchema.validate(req.body)
-    if(validationError) {
-        throw new Errors.BadRequestError({message: parseJoiErrors(validationError)})
+    // const {error: validationError} = postsValidator.createPostSchema.validate(req.body)
+    // if(validationError) {
+    //     throw new Errors.BadRequestError({message: parseJoiErrors(validationError)})
+    // }
+
+    if(!req.file){
+        throw new errors.BadRequestError({message: "Error reading content"})
     }
     const user = req.user!
+
+    const params = {
+        Bucket: process.env.BUCKET_NAME!,
+        Key: randomUUID(),
+        Body: req.file?.buffer,
+        ContentType: req.file?.mimetype
+    }
+
+    const command = new PutObjectCommand(params)
+    const s3Result = await s3Client.send(command)
+
+    console.log({s3Result})
+
+    res.status(StatusCodes.OK).json({s3Result})
+    return
     const post = await postsService.insertPost({...req.body, userId:user.id})
     if(!post) {
         throw new Errors.InternalServerError({message: "Could not insert post."+ req.body})
     }
-    res.status(StatusCodes.OK).json({post})
 }
 
 
