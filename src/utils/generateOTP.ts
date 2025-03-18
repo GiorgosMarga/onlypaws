@@ -1,3 +1,3 @@
 export default function generateOTP() {
-    return Math.floor(Math.random() * (99_999 - 10_000 + 1)) +  10_000;
+    return Math.floor(Math.random() * (999_999 - 100_000 + 1)) +  100_000;
 }

@@ -9,10 +9,18 @@ import NotAuthorizedError from "../errors/NotAuthorizedError"
 import userInfoValidator from "../validators/userInfo"
 import { UserInfoInsert } from "../models/userInfo.model"
 import InternalServerError from "../errors/InternalServerError"
+import { randomUUID } from "crypto"
+import { PutObjectCommand } from "@aws-sdk/client-s3"
+import { s3Client } from "../s3Bucket"
+import errors from "../errors"
 
 const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
-    const {error: validationError} = userInfoValidator.userInfoInsertSchema.validate(req.body)
+    const userInfoBody = JSON.parse(req.body.userInfo)
+    if(!userInfoBody) {
+        throw new errors.BadRequestError({message: "User info is required"})
+    }
+    const {error: validationError} = userInfoValidator.userInfoInsertSchema.validate(userInfoBody)
     if(validationError){
         throw new BadRequestError({message: validationError.details[0].message})
     }
@@ -20,8 +28,22 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     if(exists) {
         throw new BadRequestError({message: `UserInfo for user: ${user.id} already exists`})
     }
+    let avatar_url
+    if(req.file){
+        const params = {
+            Bucket: process.env.BUCKET_NAME!,
+            Key: randomUUID(),
+            Body: req.file?.buffer,
+            ContentType: req.file?.mimetype
+        }
+        
+        const command = new PutObjectCommand(params)
+        const s3Result = await s3Client.send(command)
+        avatar_url = s3Result.SSEKMSKeyId as string ?? null
+    }
 
-    const userInfo = {...req.body, userId: user.id, birthDate: new Date(req.body["birthDate"])} as UserInfoInsert
+
+    const userInfo = {...userInfoBody, userId: user.id, birthDate: new Date(userInfoBody["birthDate"]), avatar: avatar_url} as UserInfoInsert
 
     const insertedUserInfo = await userInfoService.insertUserInfo(userInfo)
     if(!insertedUserInfo) {

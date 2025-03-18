@@ -213,10 +213,11 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
 
-    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
+    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: false }); // <- 1 h
+    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: false }); // <- 7 days
     // return user only for testing
-    res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: refreshToken})
+    // res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: refreshToken})
+    res.status(StatusCodes.OK).json({"message": "Success"})
 
 }
 

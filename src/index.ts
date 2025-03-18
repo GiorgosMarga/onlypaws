@@ -13,11 +13,16 @@ import { followersRouter } from "./routes/followers";
 import { commentsRouter } from "./routes/comments";
 import notFound from "./middlewares/notFound"
 dotenv.config()
+import cors from "cors"
 
 export const app: Express = express()
 
 
 app.use(morgan("dev"))
+app.use(cors({
+  origin: "http://localhost:3000", // Allow frontend origin
+  credentials: true, // Allow cookies & authentication headers
+}));
 app.use(express.json())
 app.use(cookieParser()) 
 app.use("/api/v1/users",userRouter)

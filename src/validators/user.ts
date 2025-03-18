@@ -18,7 +18,7 @@ const userLoginSchema = Joi.object({
 }).required().label("body")
 
 const otpSchema = Joi.object({
-    otp: Joi.number().min(10_000).max(99_999).required()
+    otp: Joi.number().min(100_000).max(999_999).required()
 }).required().label("body")
 const emailSchema = Joi.object({
     email: Joi.string().email().required()

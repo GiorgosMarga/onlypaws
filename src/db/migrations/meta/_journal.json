@@ -183,6 +183,20 @@
       "when": 1742291646042,
       "tag": "0025_redundant_mesmero",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1742310720806,
+      "tag": "0026_cooing_the_professor",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1742313330475,
+      "tag": "0027_amusing_nico_minoru",
+      "breakpoints": true
     }
   ]
 }

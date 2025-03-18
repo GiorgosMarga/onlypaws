@@ -6,7 +6,9 @@ export const userInfoTable = schema.table("user_info", {
     birthDate: timestamp("birth_date").notNull(),
     bio: text(),
     dogName: varchar("dog_name", {length: 255}).notNull(),
+    name: varchar("name", {length: 255}).notNull(),
     dogAge: integer("dog_age"),
     dogBreed: varchar("dog_breed",{length:255}),
+    avatar: varchar("avatar"),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date())
 })

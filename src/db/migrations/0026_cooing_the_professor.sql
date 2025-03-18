@@ -1,0 +1,1 @@
+ALTER TABLE "onlypaws"."user_info" ADD COLUMN "avatar" varchar;
