@@ -30,6 +30,7 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     }
     let avatar_url
     if(req.file){
+
         const params = {
             Bucket: process.env.BUCKET_NAME!,
             Key: randomUUID(),
@@ -38,8 +39,8 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
         }
         
         const command = new PutObjectCommand(params)
-        const s3Result = await s3Client.send(command)
-        avatar_url = s3Result.SSEKMSKeyId as string ?? null
+        await s3Client.send(command)
+        avatar_url = `https://${process.env.BUCKET_NAME!}.s3.${process.env.BUCKET_REGION!}.amazonaws.com/${params.Key}`
     }
 
 
