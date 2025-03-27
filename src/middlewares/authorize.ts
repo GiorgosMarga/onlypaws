@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import NotAuthorizedError from "../errors/NotAuthorizedError";
-import { User } from "../models/user.model";
+import { TokenUser } from "../utils/token";
 
 export interface AuthenticatedReq extends Request {
-    user?: User
+    user?: TokenUser
 }
 
 

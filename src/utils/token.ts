@@ -16,8 +16,18 @@ export const signToken = (payload: any, secret: string, options?: jwt.SignOption
     return jwt.sign(payload, secret, options);
 }
 
+
+export type TokenUser = {
+        id: string,
+        isBanned: boolean,
+        isVerified: boolean,
+        role: "ADMIN" | "USER"
+    }
+
+
+
 export interface AccessTokenJWT extends JwtPayload {
-    user: User
+    user: TokenUser 
 }
 export interface RefreshTokenJWT extends JwtPayload {
     refreshToken: RefreshToken

@@ -424,7 +424,7 @@ export const generateGoogleUserCode = async (req: Request, res:Response) => {
 export const whoAmI = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
 
-    const fetchedUser = await userService.fetchUserByEmail(user.email)
+    const fetchedUser = await userService.fetchUserById(user.id)
     if(!fetchedUser) {
         throw new errors.NotFoundError({message: `User with id: ${user.id} doesn't exist`})
     }
