@@ -4,7 +4,7 @@ import { uuidSchema } from "../validators/uuid";
 import postLikesService from "../services/postLikes"
 import { StatusCodes } from "http-status-codes";
 import { Response } from "express";
-import postAnalyticsService from "../services/postAnlytics"
+import postAnalyticsService from "../services/postAnalytics"
 const likePost = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
     const postId = req.params["postId"] as string

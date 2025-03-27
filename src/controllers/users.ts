@@ -217,12 +217,15 @@ export const loginUser = async (req: Request, res: Response) => {
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: false }); // <- 7 days
     // return user only for testing
     // res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: refreshToken})
-    res.status(StatusCodes.OK).json({"message": "Success"})
+    res.status(StatusCodes.OK).json({userId: user.id})
 
 }
 
 export const sendOTP = async (req: AuthenticatedReq, res: Response) => {
     const user  = req.user!
+    if(user.isVerified) {
+        throw new errors.BadRequestError({message: "You are already verified"})
+    }
     
     const otpNumber = generateOTP()
     const expiresAt = new Date(Date.now() + convertToMs(5,"min"))
@@ -233,7 +236,7 @@ export const sendOTP = async (req: AuthenticatedReq, res: Response) => {
 
     res.status(StatusCodes.OK).json({otp})
 }
-
+ 
 export const verifyUser = async (req: AuthenticatedReq, res: Response) => {
     const {error: validationError} = userSchema.otpSchema.validate(req.body)
     if(validationError) {

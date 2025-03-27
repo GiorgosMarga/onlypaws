@@ -13,6 +13,7 @@ export const postsRouter = Router()
 
 
 postsRouter.get("/",postsControllers.getPosts)
+postsRouter.get("/user/:userId",postsControllers.getPostsForUser)
 postsRouter.get("/:postId",postsControllers.getPost)
 postsRouter.patch("/:postId", authenticate,authorize,postsControllers.updatePost)
 postsRouter.delete("/:postId",authenticate,authorize, postsControllers.deletePost)

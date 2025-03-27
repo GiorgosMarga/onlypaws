@@ -10,7 +10,3 @@ export const postLikesTable = schema.table("post_likes", {
     primaryKey({columns: [table.userId, table.postId]}),
 ])
 
-export const postAnalyticsTable = schema.table("post_analytics", {
-    postId: uuid().references(()=>postsTable.id).primaryKey(),
-    likes: integer().default(0),
-})

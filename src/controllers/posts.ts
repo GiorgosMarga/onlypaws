@@ -11,6 +11,8 @@ import errors from "../errors";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "../s3Bucket";
 import { randomUUID } from "crypto";
+
+
 const updatePost = async (req: AuthenticatedReq, res: Response) => {
     const postId = req.params["postId"] as string
     const {error: idError} = uuidSchema.validate(postId)
@@ -138,10 +140,23 @@ const deletePost = async (req: AuthenticatedReq, res: Response) => {
     res.status(StatusCodes.OK).json({post})
 }
 
+
+const getPostsForUser = async (req: Request, res: Response) => {
+    const {userId} = req.params
+    const {error: idError} = uuidSchema.validate(userId)
+    if(idError) {   
+        throw new Errors.BadRequestError({message: "Invalid id: "+userId})
+    }   
+
+    const posts = await postsService.getPostsForUser(userId)  
+    res.status(StatusCodes.OK).json({posts})    
+
+}
 export default {
     deletePost,
     createPost,
     getPost,
     getPosts,
-    updatePost
+    updatePost,
+    getPostsForUser
 }
