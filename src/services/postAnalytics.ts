@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm"
 import { db } from "../db"
-import { postAnalyticsTable } from "../db/schema/postLikes"
+import { postAnalyticsTable } from "../db/schema/postAnalytics"
 
 const createPostAnalytics = async (postId: string) => {
     const postAnal = await db.insert(postAnalyticsTable).values({postId}).returning()
@@ -12,18 +12,11 @@ const deletePostAnalytics = async (postId: string) => {
     return postAnal.length === 0 ? null : postAnal[0]
 }
 
-const addLike = async (postId: string) => {
+const updatePostAnalytics = async (postId: string, column: "likes" | "comments" | "shares" | "views", increment: boolean) => {
     await db.update(postAnalyticsTable)
-    .set({ likes: sql`${postAnalyticsTable.likes} + 1` }) 
-    .where(eq(postAnalyticsTable.postId, postId));
-}
-
-const deleteLike = async (postId: string) => {
-    await db.update(postAnalyticsTable)
-    .set({ likes: sql`${postAnalyticsTable.likes} - 1` }) 
-    .where(eq(postAnalyticsTable.postId, postId));
-}
-
+        .set({ [column]: sql`${postAnalyticsTable[column]} ${increment ? "+" : "-"} 1` })
+        .where(eq(postAnalyticsTable.postId, postId));
+};
 const getLikes = async (postId: string) => {
     const likes =await  db.select().from(postAnalyticsTable).where(eq(postAnalyticsTable.postId,postId))
     return likes.length===0 ? null : likes[0]
@@ -32,7 +25,6 @@ const getLikes = async (postId: string) => {
 export default {
     createPostAnalytics,
     deletePostAnalytics,
-    addLike,
-    deleteLike,
+    updatePostAnalytics,
     getLikes
 }
