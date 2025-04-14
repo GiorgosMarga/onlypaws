@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { createUser, deleteUser, forgotPassword, generateGithubUserCode, generateGoogleUserCode, getUserByID, getUsers, loginUser, registerGithubUser, registerGoogleUser, resetPassword, sendOTP, updateUser, verifyUser, whoAmI } from "../controllers/users";
 import authenticate from "../middlewares/authenticate";
+import authorize from "../middlewares/authorize";
 
 
 export const userRouter = Router()
@@ -16,7 +17,7 @@ userRouter.patch("/reset-password",resetPassword)
 userRouter.get("/send-otp",authenticate, sendOTP)
 userRouter.post("/verify",authenticate, verifyUser)
 userRouter.get("/:userId", getUserByID)
-userRouter.get("/", getUsers)
+userRouter.get("/",authenticate,authorize, getUsers)
 userRouter.post("/",createUser)
 userRouter.patch("/:userId", authenticate,updateUser)
 userRouter.delete("/:userId",authenticate,deleteUser)

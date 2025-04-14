@@ -5,7 +5,7 @@ import authenticate from "../middlewares/authenticate";
 import multer from "multer"
 
 const storage = multer.memoryStorage()
-const upload = multer({ storage: storage })
+const upload = multer({ storage: storage, limits: {fileSize: 1024*1024*101,fieldSize: 1024 * 1024 * 101 } })
 
 
 export const postsRouter = Router()
@@ -17,4 +17,4 @@ postsRouter.get("/user/:userId",postsControllers.getPostsForUser)
 postsRouter.get("/:postId",postsControllers.getPost)
 postsRouter.patch("/:postId", authenticate,authorize,postsControllers.updatePost)
 postsRouter.delete("/:postId",authenticate,authorize, postsControllers.deletePost)
-postsRouter.post("/",authenticate,upload.single("image"), postsControllers.createPost)
+postsRouter.post("/",authenticate,upload.single("media"), postsControllers.createPost)

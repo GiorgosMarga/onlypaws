@@ -12,8 +12,9 @@ export const usersTable = schema.table("users", {
     role: userRole("role").notNull().default("USER"),
     profilePic: varchar("profile_pic",{length:255}),
     lastLogin: date("last_login"),
-    isBanned: boolean("is_banned").default(false),
-    isVerified: boolean("is_verified").default(false),
+    isBanned: boolean("is_banned").notNull().default(false),
+    isVerified: boolean("is_verified").notNull().default(false),
+    hasFinishedProfile: boolean("has_finished_profile").default(false),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()),
 }, table => [

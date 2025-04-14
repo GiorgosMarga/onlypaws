@@ -22,7 +22,7 @@ export type TokenUser = {
         isBanned: boolean,
         isVerified: boolean,
         role: "ADMIN" | "USER"
-    }
+}
 
 
 
@@ -41,8 +41,11 @@ export const validateToken = <T extends JwtPayload>(token: string, secret: strin
     }
 }
 
-export const getRefreshToken = (req: Request): RefreshToken | null => {
-    const token = req.cookies["refresh_token"]
+export const getRefreshToken = (req: Request) => {
+    let token = req.cookies["refresh_token"]
+    if (!token && req.headers.authorization?.startsWith("Bearer ")) {
+        token = req.headers.authorization.split(" ")[1];
+    }
     const payload = validateToken<RefreshTokenJWT>(token, process.env.JWT_REFRESH_SECRET!)
     if(!payload){
         return null

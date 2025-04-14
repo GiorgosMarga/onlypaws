@@ -27,11 +27,12 @@ export const refreshToken = async (req: Request, res: Response) => {
 
     
     const user = await userService.fetchUserById(tokenPayload.userId)
-    if(!user || !user.users) {
+    if(!user) {
         throw new NotAuthorizedError({message: "You are not authorized to perform this action."})
     }
 
-    const [accessToken, refreshToken] = await tokenService.createTokens(user.users)
+    user.password = null
+    const [accessToken, refreshToken] = await tokenService.createTokens(user)
 
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d"), httpOnly: true });

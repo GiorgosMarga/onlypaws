@@ -4,7 +4,7 @@ import { refreshTokenTable } from "../db/schema/refreshTokens"
 import {type RefreshTokenInsert} from "../models/refreshToken.model"
 import { type User } from "../models/user.model"
 import convertToMs from "../utils/convertToMs"
-import { signToken } from "../utils/token"
+import { signToken, TokenUser } from "../utils/token"
 
 const insertRefreshToken = async (refreshToken: RefreshTokenInsert) => {
     const token = await db.insert(refreshTokenTable).values(refreshToken).returning()
@@ -26,17 +26,15 @@ const revokeToken = async (tokenId: string) => {
     const token = await db.update(refreshTokenTable).set({isRevoked: true}).where(eq(refreshTokenTable.userId,tokenId)).returning()
     return token.length === 0 ? null : token[0]
 }
-const createTokens = async (user: User) => {
-
-    const signedUser = {
-        userId: user.id,
-        isBanned: user.isBanned,
+const createTokens = async (user: TokenUser) => {
+    const tokenUser = {
+        id: user.id,
+        isBanned: user.isBanned,    
         isVerified: user.isVerified,
         role: user.role
     }
-
     const refreshTokenExpirationDate = new Date(Date.now() + convertToMs(7,"d")) // <- 7 days
-    const accessToken = signToken({user: signedUser}, process.env.JWT_ACCESS_SECRET!, {expiresIn: "1h"})
+    const accessToken = signToken({user: tokenUser}, process.env.JWT_ACCESS_SECRET!, {expiresIn: "1h"})
     const refreshToken = await insertRefreshToken({userId: user.id,expiresAt: refreshTokenExpirationDate})
     const signedRefreshToken = signToken({refreshToken}, process.env.JWT_REFRESH_SECRET!, {expiresIn: "7d"})    
     return [accessToken,signedRefreshToken]

@@ -82,19 +82,23 @@ const getPost = async (req: Request, res: Response) => {
 }
 
 const createPost = async (req: AuthenticatedReq, res: Response) => {
-    // const {error: validationError} = postsValidator.createPostSchema.validate(req.body)
-    // if(validationError) {
-    //     throw new Errors.BadRequestError({message: parseJoiErrors(validationError)})
-    // }
+    const postJSON = JSON.parse(req.body.post)
+    const {error: validationError} = postsValidator.createPostSchema.validate(postJSON)
+    if(validationError) {
+        throw new Errors.BadRequestError({message: parseJoiErrors(validationError)})
+    }
 
     if(!req.file){
+        console.log(req.file)
+        console.log(req.body)
         throw new errors.BadRequestError({message: "Error reading content"})
     }
     const user = req.user!
 
+    const postS3Key = randomUUID()
     const params = {
         Bucket: process.env.BUCKET_NAME!,
-        Key: randomUUID(),
+        Key: postS3Key,
         Body: req.file?.buffer,
         ContentType: req.file?.mimetype
     }
@@ -102,14 +106,19 @@ const createPost = async (req: AuthenticatedReq, res: Response) => {
     const command = new PutObjectCommand(params)
     const s3Result = await s3Client.send(command)
 
-    console.log({s3Result})
+    if(!s3Result) {
+        throw new errors.InternalServerError({message: "Error uploading file to S3"})
+    }
+    const postUrl = `https://${process.env.BUCKET_NAME}.s3.${process.env.BUCKET_REGION}.amazonaws.com/${postS3Key}`
+    postJSON.mediaUrl = [postUrl]
+    console.log("Post JSON: ", postJSON)   
 
-    res.status(StatusCodes.OK).json({s3Result})
-    return
-    const post = await postsService.insertPost({...req.body, userId:user.id})
+    const post = await postsService.insertPost({...postJSON, userId:user.id})
     if(!post) {
         throw new Errors.InternalServerError({message: "Could not insert post."+ req.body})
     }
+
+    res.status(StatusCodes.CREATED).json({post})
 }
 
 

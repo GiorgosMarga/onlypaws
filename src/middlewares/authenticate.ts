@@ -9,13 +9,13 @@ export default function authenticate(
     res: Response,
     next: NextFunction 
 ){
-    const auth_header = req.headers["authorization"]
-    if(!auth_header || auth_header.length === 0) {
-        throw new NotAuthorizedError({message:"You are not authenticated"})
-    }
+
+    let {access_token: token} = req.cookies
     
-    const token = auth_header.split(" ")[1]
-    if(!token || token.length === 0){
+    if (!token && req.headers.authorization && req.headers.authorization.startsWith("Bearer ")) {
+        token = req.headers.authorization.split(" ")[1];
+    }
+    if(!token || token.length === 0) {
         throw new NotAuthorizedError({message:"You are not authenticated"})
     }
 
@@ -23,7 +23,6 @@ export default function authenticate(
     if(!tokenPayload) {
         throw new NotAuthorizedError({message:"You are not authenticated"})
     }
-    const { user } = tokenPayload
-    req["user"] = user 
+    req.user = tokenPayload.user 
     next()
 }

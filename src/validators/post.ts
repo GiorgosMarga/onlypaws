@@ -1,7 +1,7 @@
 import Joi from "joi";
 
 const createPostSchema = Joi.object({
-    mediaUrl: Joi.array().required().max(10).min(1),
+    // mediaUrl: Joi.array().required().max(10).min(1),
     tags: Joi.array().max(10),
     description: Joi.string()
 }).required().label("body")

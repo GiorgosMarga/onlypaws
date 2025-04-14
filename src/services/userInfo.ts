@@ -3,6 +3,7 @@ import { db } from "../db"
 import { userInfoTable } from "../db/schema/userInfo"
 import type { UserInfo, UserInfoInsert } from "../models/userInfo.model"
 import { followersTable } from "../db/schema/follows"
+
 const fetchUserInfo = async (userId: string) => {
     const followersCountQuery = db
     .select({ count: sql<number>`COUNT(*)` })
@@ -22,6 +23,7 @@ const fetchUserInfo = async (userId: string) => {
         dogAge: userInfoTable.dogAge,
         dogName: userInfoTable.dogName,
         dogBreed: userInfoTable.dogBreed, 
+        avatar: userInfoTable.avatar,
     })
     .from(userInfoTable)
     .where(eq(userInfoTable.userId, userId))
@@ -32,7 +34,6 @@ const fetchUserInfo = async (userId: string) => {
         userInfoQuery
     ])
 
-    console.log(followingCount)
     return userInfo.length === 0 ? null : {
         ...userInfo[0],
         followersCount: followersCount[0]?.count ?? 0,

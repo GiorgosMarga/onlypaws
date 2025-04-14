@@ -1,4 +1,3 @@
-// TODO: move db functions to services folder
 import "dotenv/config"
 import type { Request, Response } from "express";
 import {  StatusCodes } from "http-status-codes";
@@ -32,7 +31,8 @@ export const getUserByID = async (req:Request, res:Response) => {
     if(!user) {
         throw new errors.NotFoundError({message: `User with id: ${id} was not found.`})
     }
-    res.status(StatusCodes.OK).json({user: {...user.users,...user?.user_info}})
+    const {password, ...safeUser} = user    
+    res.status(StatusCodes.OK).json({user: safeUser})
     
 }
 
@@ -73,7 +73,8 @@ export const createUser = async (req:Request, res:Response) => {
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
     // return user only for testing
-    res.status(StatusCodes.CREATED).json({user:insertedUser, access_token: accessToken, refresh_token: refreshToken})
+    const {password, ...safeUser} = insertedUser
+    res.status(StatusCodes.CREATED).json({user:safeUser})
 }
  
 // forgotPassword is used to generate a token for password reset
@@ -125,11 +126,13 @@ export const resetPassword = async (req: Request, res: Response) => {
     user.users.password = hashPassword(password)
 
     const updatedUser = await userService.updateUser(user.users)
-    if(!updateUser) {
+    if(!updatedUser) {
         throw new errors.NotFoundError({message: `User with id: ${user.users.id} was not found.`})
     }
     await userService.deleteResetToken(user.password_tokens.token)
-    res.status(StatusCodes.OK).json({user: updatedUser})
+    const {password: userPassword, ...safeUser} = updatedUser
+
+    res.status(StatusCodes.OK).json({user: safeUser})
 }
 export const updateUser = async(req: AuthenticatedReq, res: Response) => {
     const {userId: id} = req.params
@@ -161,8 +164,8 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
     if(!updatedUser) {
         throw new errors.NotFoundError({message: `User with id: ${id} was not found.`})
     }
-
-    res.status(StatusCodes.OK).json({user: updatedUser})
+    const {password, ...safeUser} = updatedUser
+    res.status(StatusCodes.OK).json({user: safeUser})
 }
 
 export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
@@ -186,7 +189,8 @@ export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
         throw new errors.NotFoundError({message: `User with id: ${id} was not found.`})
     }
 
-    res.status(StatusCodes.OK).json({user: deletedUser})
+    const {password, ...safeUser} = deletedUser
+    res.status(StatusCodes.OK).json({user: safeUser})
 }
 
 export const loginUser = async (req: Request, res: Response) => {
@@ -211,10 +215,14 @@ export const loginUser = async (req: Request, res: Response) => {
         throw new errors.ValidationError({message: "invalid credentials"})
     }
 
+    if(user.isBanned) {
+        throw new errors.BadRequestError({message: "User is banned"})
+    }
+
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
 
-    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: false }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: false }); // <- 7 days
+    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
+    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
     // return user only for testing
     // res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: refreshToken})
     res.status(StatusCodes.OK).json({userId: user.id})
@@ -333,11 +341,13 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
     }
 
     // TODO: change this to 15m
+
+    
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
     // return user only for testing
-    res.status(StatusCodes.CREATED).json({user, access_token: accessToken, refresh_token: refreshToken, userData})
+    res.status(StatusCodes.CREATED).json({message: "success"})
 
 }
 export const registerGithubUser = async (req: Request, res: Response) => {
@@ -405,7 +415,8 @@ export const registerGithubUser = async (req: Request, res: Response) => {
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
     // return user only for testing
-    res.status(StatusCodes.CREATED).json({user, access_token: accessToken, refresh_token: refreshToken})
+    res.status(StatusCodes.CREATED).json({message: "success"})
+
 }
 
 export const generateGithubUserCode = async (req: Request, res: Response) => {
@@ -429,5 +440,6 @@ export const whoAmI = async (req: AuthenticatedReq, res: Response) => {
         throw new errors.NotFoundError({message: `User with id: ${user.id} doesn't exist`})
     }
 
-    res.status(StatusCodes.OK).json({user: fetchedUser})
+    const {password, ...safeUser} = fetchedUser
+    res.status(StatusCodes.OK).json({user: safeUser})
 }

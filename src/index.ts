@@ -23,7 +23,8 @@ app.use(cors({
   origin: "http://localhost:3000", // Allow frontend origin
   credentials: true, // Allow cookies & authentication headers
 }));
-app.use(express.json())
+app.use(express.json({limit: 1024*1024*100}))
+app.use(express.urlencoded({limit: 1024*1024*100, extended: true}))
 app.use(cookieParser()) 
 app.use("/api/v1/users",userRouter)
 app.use("/api/v1/likes", postLikesRouter)

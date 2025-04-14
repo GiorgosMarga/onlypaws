@@ -12,7 +12,7 @@ const fetchUserByEmail = async (email: string) => {
 }
 
 const fetchUserById = async (id: string) => {
-    const user = await db.select().from(usersTable).leftJoin(userInfoTable,eq(usersTable.id,userInfoTable.userId)).where(eq(usersTable.id,id))
+    const user = await db.select().from(usersTable).where(eq(usersTable.id,id))
     return user.length === 0 ? null : user[0]
 }
 const fetchUsers = async ({page=1,limit=10}:{page:number, limit:number}) => {
@@ -21,6 +21,9 @@ const fetchUsers = async ({page=1,limit=10}:{page:number, limit:number}) => {
 }
 const insertUser = async (user: UserInsert) => {
     const insertedUser = await db.insert(usersTable).values(user).returning()
+
+    const tempName = insertedUser[0].email.split("@")[0]
+    await db.insert(userInfoTable).values({userId:insertedUser[0].id, name:tempName}).returning()
     return insertedUser.length === 0 ? null : insertedUser[0]
 }
 
