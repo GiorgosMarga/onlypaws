@@ -1,1 +1,0 @@
-ALTER TABLE "onlypaws"."users" ALTER COLUMN "password" DROP NOT NULL;

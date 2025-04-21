@@ -11,6 +11,7 @@ import morgan from "morgan"
 import { postLikesRouter } from "./routes/postLikes";
 import { followersRouter } from "./routes/followers";
 import { commentsRouter } from "./routes/comments";
+import postSavesRouter from "./routes/postSaves"
 import notFound from "./middlewares/notFound"
 dotenv.config()
 import cors from "cors"
@@ -33,6 +34,7 @@ app.use("/api/v1/tokens",tokenRouter)
 app.use("/api/v1/user-info",userInfoRouter)
 app.use("/api/v1/follows",followersRouter)
 app.use("/api/v1/comments",commentsRouter)
+app.use("/api/v1/save",postSavesRouter)
 app.use(notFound)
 app.use(errorHandler)
 

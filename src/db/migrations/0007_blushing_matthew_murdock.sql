@@ -1,1 +1,0 @@
-ALTER TABLE "onlypaws"."users" ADD COLUMN "otp_expires_at" timestamp;

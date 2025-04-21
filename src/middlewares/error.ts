@@ -14,13 +14,10 @@ export default function errorHandler(
             console.log(err.message)
         }
         res.status(err.statusCode).json({
-            error: {
-                message: err.statusCode === StatusCodes.INTERNAL_SERVER_ERROR ? "internal server error":err.message,
-            }
+            error: err.statusCode === StatusCodes.INTERNAL_SERVER_ERROR ? "internal server error":err.message,
         })
         return
     }
-
     logError(err)
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
         error: {

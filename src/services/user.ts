@@ -20,10 +20,11 @@ const fetchUsers = async ({page=1,limit=10}:{page:number, limit:number}) => {
     return users
 }
 const insertUser = async (user: UserInsert) => {
-    const insertedUser = await db.insert(usersTable).values(user).returning()
-
-    const tempName = insertedUser[0].email.split("@")[0]
-    await db.insert(userInfoTable).values({userId:insertedUser[0].id, name:tempName}).returning()
+    const insertedUser = await db.transaction(async (tx) => {
+        const newUser = await tx.insert(usersTable).values(user).returning()
+        const insertedUser =  await db.insert(userInfoTable).values({userId:newUser[0].id, name:user.username}).returning()
+        return newUser
+    })
     return insertedUser.length === 0 ? null : insertedUser[0]
 }
 

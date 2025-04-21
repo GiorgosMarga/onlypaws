@@ -11,6 +11,7 @@ import errors from "../errors";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "../s3Bucket";
 import { randomUUID } from "crypto";
+import user from "../validators/user";
 
 
 const updatePost = async (req: AuthenticatedReq, res: Response) => {
@@ -49,7 +50,11 @@ const updatePost = async (req: AuthenticatedReq, res: Response) => {
 }
 
 
-const getPosts = async (req: Request, res: Response) => {
+const getPosts = async (req: AuthenticatedReq, res: Response) => {
+
+
+    const user = req.user
+
     let page = Number(req.query["page"])
     if(!page || isNaN(page)) {
         page = 1
@@ -60,7 +65,7 @@ const getPosts = async (req: Request, res: Response) => {
         limit = 10
     }
 
-    const posts = await postsService.getPosts(page,limit)
+    const posts = await postsService.getPosts(page,limit, user ? user.id : null)
 
     res.status(StatusCodes.OK).json({posts})
 }
@@ -111,8 +116,6 @@ const createPost = async (req: AuthenticatedReq, res: Response) => {
     }
     const postUrl = `https://${process.env.BUCKET_NAME}.s3.${process.env.BUCKET_REGION}.amazonaws.com/${postS3Key}`
     postJSON.mediaUrl = [postUrl]
-    console.log("Post JSON: ", postJSON)   
-
     const post = await postsService.insertPost({...postJSON, userId:user.id})
     if(!post) {
         throw new Errors.InternalServerError({message: "Could not insert post."+ req.body})

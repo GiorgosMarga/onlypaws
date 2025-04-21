@@ -23,7 +23,8 @@ const fetchUserInfo = async (userId: string) => {
         dogAge: userInfoTable.dogAge,
         dogName: userInfoTable.dogName,
         dogBreed: userInfoTable.dogBreed, 
-        avatar: userInfoTable.avatar,
+        userAvatar: userInfoTable.userAvatar,
+        dogAvatar: userInfoTable.dogAvatar,
     })
     .from(userInfoTable)
     .where(eq(userInfoTable.userId, userId))
@@ -36,8 +37,8 @@ const fetchUserInfo = async (userId: string) => {
 
     return userInfo.length === 0 ? null : {
         ...userInfo[0],
-        followersCount: followersCount[0]?.count ?? 0,
-        followingCount: followingCount[0]?.count ?? 0
+        followers: followersCount[0]?.count ?? 0,
+        following: followingCount[0]?.count ?? 0
     } 
 }
 

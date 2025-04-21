@@ -8,6 +8,6 @@ const upload = multer({ storage: storage })
 export const userInfoRouter = Router()
 
 userInfoRouter.get("/:userId", userInfoControllers.getUserInfo)
-userInfoRouter.post("/",authenticate,upload.single("avatar"), userInfoControllers.createUserInfo)
+userInfoRouter.post("/",authenticate,upload.fields([{ name: 'userPic', maxCount: 1 }, { name: 'dogPic', maxCount: 1 }]), userInfoControllers.createUserInfo)
 userInfoRouter.patch("/:userId", authenticate,userInfoControllers.updateUserInfo)
 userInfoRouter.delete("/:userId", authenticate,userInfoControllers.deleteUserInfo)

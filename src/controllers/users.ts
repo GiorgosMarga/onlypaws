@@ -1,7 +1,7 @@
 import "dotenv/config"
 import type { Request, Response } from "express";
 import {  StatusCodes } from "http-status-codes";
-import userSchema from "../validators/user";
+import userValidator from "../validators/user";
 import { uuidSchema } from "../validators/uuid";
 import type { GithubUserData, UserData, UserInsert } from "../models/user.model";
 import { comparePasswords, hashPassword } from "../utils/password";
@@ -14,6 +14,7 @@ import generateRandomHex from "../utils/generateRandomHex";
 import convertToMs from "../utils/convertToMs";
 import otpService from "../services/otp"
 import errors from "../errors";
+import ParseValidationErrors from "../utils/parseValidationError";
 
 const TOKEN_LENGTH = 16
 
@@ -52,9 +53,9 @@ export const getUsers = async (req:Request, res:Response) => {
 }
 
 export const createUser = async (req:Request, res:Response) => {
-    const {error: validationError} = userSchema.userSchema.validate(req.body)
+    const {error: validationError} = userValidator.userSchema.validate(req.body, {abortEarly: false})
     if (validationError) {
-        throw new errors.ValidationError({message: validationError.details[0].message})
+        throw new errors.BadRequestError({message: ParseValidationErrors(validationError)})
     }
 
     let user = req.body as UserInsert
@@ -79,7 +80,7 @@ export const createUser = async (req:Request, res:Response) => {
  
 // forgotPassword is used to generate a token for password reset
 export const forgotPassword = async (req: Request, res: Response) => {
-    const {error: validationError} = userSchema.emailSchema.validate(req.body)
+    const {error: validationError} = userValidator.emailSchema.validate(req.body)
     if (validationError) {
         throw new errors.BadRequestError({message:validationError.details[0].message})
     } 
@@ -102,7 +103,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 }
 
 export const resetPassword = async (req: Request, res: Response) => {
-    const {error: validationError} = userSchema.userUpdateSchema.validate(req.body)
+    const {error: validationError} = userValidator.userUpdateSchema.validate(req.body)
     if (validationError) {
         throw new errors.BadRequestError({message:validationError.details[0].message})
     } 
@@ -149,7 +150,7 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
         throw new errors.NotAuthorizedError({message:"You are not authorized to perform this action."})
     }
 
-    const {error: validationError} = userSchema.userUpdateSchema.validate(req.body)
+    const {error: validationError} = userValidator.userUpdateSchema.validate(req.body)
     if(validationError){
         throw new errors.ValidationError({message:validationError.details[0].message})
     }
@@ -194,7 +195,7 @@ export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
 }
 
 export const loginUser = async (req: Request, res: Response) => {
-    const {error: validationError, value} = userSchema.userLoginSchema.validate(req.body)
+    const {error: validationError, value} = userValidator.userLoginSchema.validate(req.body)
     if(validationError) {
         throw new errors.ValidationError({message: validationError.details[0].message})
     }
@@ -242,11 +243,11 @@ export const sendOTP = async (req: AuthenticatedReq, res: Response) => {
         throw new errors.InternalServerError({message: "Could not generate a new OTP"})
     }
 
-    res.status(StatusCodes.OK).json({otp})
+    res.status(StatusCodes.OK).json({otp: otp})
 }
  
 export const verifyUser = async (req: AuthenticatedReq, res: Response) => {
-    const {error: validationError} = userSchema.otpSchema.validate(req.body)
+    const {error: validationError} = userValidator.otpSchema.validate(req.body)
     if(validationError) {
         throw new errors.ValidationError({message: validationError.details[0].message})
     }
@@ -287,7 +288,7 @@ export const logout = async (req: AuthenticatedReq, res: Response) => {
 }
 
 export const registerGoogleUser = async (req: Request, res: Response) => {
-    const {error: validationError} = userSchema.googleCodeSchema.validate(req.query)
+    const {error: validationError} = userValidator.googleCodeSchema.validate(req.query)
 
     if(validationError) {
         throw new errors.BadRequestError({message: validationError.details[0].message})

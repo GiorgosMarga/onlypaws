@@ -8,7 +8,7 @@ export const usersTable = schema.table("users", {
     github_id: varchar("github_id").unique(),
     username: varchar({length:255}).notNull(),
     email:varchar({ length: 255 }).notNull(),
-    password: varchar({length:256}), // can be null in case of google auth
+    password: varchar({length:256}), // can be null in case of 3rd party auth
     role: userRole("role").notNull().default("USER"),
     profilePic: varchar("profile_pic",{length:255}),
     lastLogin: date("last_login"),

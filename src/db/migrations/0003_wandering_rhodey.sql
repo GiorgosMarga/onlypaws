@@ -1,1 +1,0 @@
-ALTER TABLE "onlypaws"."users" RENAME COLUMN "userRole" TO "role";

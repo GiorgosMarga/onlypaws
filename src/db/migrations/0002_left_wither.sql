@@ -1,0 +1,1 @@
+DROP VIEW "onlypaws"."posts_view";

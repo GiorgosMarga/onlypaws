@@ -7,12 +7,12 @@ import { StatusCodes } from "http-status-codes"
 import { AuthenticatedReq } from "../middlewares/authorize"
 import NotAuthorizedError from "../errors/NotAuthorizedError"
 import userInfoValidator from "../validators/userInfo"
-import { UserInfoInsert } from "../models/userInfo.model"
 import InternalServerError from "../errors/InternalServerError"
 import { randomUUID } from "crypto"
 import { PutObjectCommand } from "@aws-sdk/client-s3"
 import { s3Client } from "../s3Bucket"
 import errors from "../errors"
+import ParseValidationErrors from "../utils/parseValidationError"
 
 const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
@@ -20,33 +20,58 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     if(!userInfoBody) {
         throw new errors.BadRequestError({message: "User info is required"})
     }
-    const {error: validationError} = userInfoValidator.userInfoInsertSchema.validate(userInfoBody)
+    const {error: validationError} = userInfoValidator.userInfoInsertSchema.validate(userInfoBody, {abortEarly: false})
     if(validationError){
-        throw new BadRequestError({message: validationError.details[0].message})
+        throw new errors.ValidationError({message: ParseValidationErrors(validationError)})
     }
-    const exists = await userInfoService.fetchUserInfo(user.id)
-    if(exists) {
-        throw new BadRequestError({message: `UserInfo for user: ${user.id} already exists`})
-    }
-    let avatar_url
-    if(req.file){
+    let userAvatarUrl;
+    let dogAvatarUrl;
 
-        const params = {
+    if(!req.files) {  
+        throw new errors.BadRequestError({message: "Two avatars are required"})
+    }
+    if(!req.files["userPic"]) {
+        throw new errors.BadRequestError({message: "Please upload you profile image."})
+    }
+    if(!req.files["dogPic"]) {
+        throw new errors.BadRequestError({message: "Please upload you dog's cute face."})
+    }
+    if(req.files) {
+        const userParams = {
             Bucket: process.env.BUCKET_NAME!,
             Key: randomUUID(),
-            Body: req.file?.buffer,
-            ContentType: req.file?.mimetype
+            Body: req.files["userPic"][0]?.buffer,
+            ContentType: req.files["userPic"][0]?.mimetype
         }
-        
-        const command = new PutObjectCommand(params)
-        await s3Client.send(command)
-        avatar_url = `https://${process.env.BUCKET_NAME!}.s3.${process.env.BUCKET_REGION!}.amazonaws.com/${params.Key}`
+        const dogParams = {
+            Bucket: process.env.BUCKET_NAME!,
+            Key: randomUUID(),
+            Body: req.files["dogPic"][0]?.buffer,
+            ContentType: req.files["dogPic"][0]?.mimetype
+        }
+        const userCommand = new PutObjectCommand(userParams)
+        const dogCommand = new PutObjectCommand(dogParams)
+        try{
+            await Promise.all([
+                s3Client.send(userCommand),
+                s3Client.send(dogCommand)
+            ])
+        }catch(err) {
+            throw new errors.InternalServerError({message: "Could not upload avatars"})
+        }
+        userAvatarUrl = `https://${process.env.BUCKET_NAME!}.s3.${process.env.BUCKET_REGION!}.amazonaws.com/${userParams.Key}`
+        dogAvatarUrl = `https://${process.env.BUCKET_NAME!}.s3.${process.env.BUCKET_REGION!}.amazonaws.com/${dogParams.Key}`
     }
 
 
-    const userInfo = {...userInfoBody, userId: user.id, birthDate: new Date(userInfoBody["birthDate"]), avatar: avatar_url} as UserInfoInsert
-
-    const insertedUserInfo = await userInfoService.insertUserInfo(userInfo)
+    const userInfo = {...userInfoBody, userId: user.id, birthDate: new Date(userInfoBody["birthDate"]), userAvatar: userAvatarUrl, dogAvatar: dogAvatarUrl}
+    let insertedUserInfo;
+    const exists = await userInfoService.fetchUserInfo(user.id)
+    if(exists) {
+        insertedUserInfo = await userInfoService.updateUserInfo(userInfo)    
+    }else {
+        insertedUserInfo = await userInfoService.insertUserInfo(userInfo)
+    }
     if(!insertedUserInfo) {
         throw new InternalServerError({message: "Could not insert a userInfo: "+ userInfo})
     }
@@ -58,7 +83,7 @@ const updateUserInfo = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
     const {error: validationError} = uuidSchema.validate(id)
     if(validationError) {
-        throw new BadRequestError({message: validationError.details[0].message})
+        throw new errors.ValidationError({message: ParseValidationErrors(validationError)})
     }
 
     if (user.id !== id && user.role !== "ADMIN") {
@@ -68,7 +93,7 @@ const updateUserInfo = async (req: AuthenticatedReq, res: Response) => {
 
     const {error: validationUpdateError} = userInfoValidator.userInfoUpdateSchema.validate(req.body)
     if(validationUpdateError){
-        throw new BadRequestError({message: validationUpdateError.details[0].message})
+        throw new errors.ValidationError({message: ParseValidationErrors(validationUpdateError)})
     }
 
     const userInfo = await userInfoService.updateUserInfo({...req.body, userId: id})

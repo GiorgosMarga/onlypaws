@@ -1,1 +1,0 @@
-ALTER TABLE "onlypaws"."users" RENAME COLUMN "profilePic" TO "profile_pic";
