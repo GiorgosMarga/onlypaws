@@ -12,13 +12,22 @@ const getComments = async (req: Request, res: Response) => {
     if(validationError) {
         throw new errors.BadRequestError({message: `Invalid id: ${postId}`})
     }
-    const comments = await commentService.getComments(postId)
+
+    let page = Number(req.query["page"])
+    let limit = Number(req.query["limit"])
+    if(!page || isNaN(page)) {
+        page = 1
+    }
+    if(!limit || isNaN(limit)) {
+        limit = 10
+    }
+
+    const comments = await commentService.getComments(postId,page,limit)
     res.status(StatusCodes.OK).json({comments})
 }
 
 const createComment = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
-
     const {error: validationError} = commentsValidator.createComment.validate(req.body)
     if(validationError) {
         throw new errors.BadRequestError({message: validationError.details[0].message})
@@ -29,7 +38,11 @@ const createComment = async (req: AuthenticatedReq, res: Response) => {
         throw new errors.InternalServerError({message: "Error creating comment."})
     }
 
-    res.status(StatusCodes.CREATED).json({comment})
+    res.status(StatusCodes.CREATED).json({comment: {
+        ...comment,
+        usename: "you",
+        likes: 0
+    }})
 }
 const deleteComment = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
