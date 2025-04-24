@@ -8,7 +8,9 @@
     "db/push": "npx drizzle-kit migrate",
     "db/pull": "npx drizzle-kit pull",
     "dev": "tsx watch src/index.ts",
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles",
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "author": "",
