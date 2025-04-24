@@ -5,16 +5,16 @@ import { and, eq, inArray, isNull, notExists, sql } from "drizzle-orm"
 import { userInfoTable } from "../db/schema/userInfo"
 import { calculateOffset } from "../utils/calculateOffset"
 import postAnalyticsService from "./postAnalytics"
+import { Query, QueryResult } from "pg"
 
 const insertComment = async (comment: CommentInsert) => {
 
-
     const result = await db.transaction(async (tx) => { 
-        const insertedComment = tx.insert(commentsTable).values(comment).returning()
+        const insertedComment = await tx.insert(commentsTable).values(comment).returning()
         await postAnalyticsService.updatePostAnalyticsWithTx(tx, comment.postId, "comments", true)
-        return insertedComment
+        return insertedComment as QueryResult[]
     })
-    return result[0] ?? null
+    return result && result.length > 0 ? result[0] : null
 }
 
 const updateComment = async (comment: Comment) => {
@@ -24,9 +24,9 @@ const updateComment = async (comment: Comment) => {
 
 const deleteComment = async (commentId: string, postId: string) => {
     const result = await db.transaction(async (tx) => { 
-        const deletedComment = tx.delete(commentsTable).where(eq(commentsTable.id, commentId)).returning()
+        const deletedComment = await tx.delete(commentsTable).where(eq(commentsTable.id, commentId)).returning()
         await postAnalyticsService.updatePostAnalyticsWithTx(tx,postId, "comments", false)
-        return deletedComment
+        return deletedComment as QueryResult[]
     })
     return result[0] ?? null
 }
