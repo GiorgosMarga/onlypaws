@@ -41,6 +41,7 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
         throw new errors.BadRequestError({message: "Please upload you dog's cute face."})
     }
     if(req.files) {
+        console.log("Files:",req.files)
         const userParams = {
             Bucket: process.env.BUCKET_NAME!,
             Key: randomUUID(),
