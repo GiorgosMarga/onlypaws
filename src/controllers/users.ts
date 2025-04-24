@@ -62,7 +62,7 @@ export const createUser = async (req:Request, res:Response) => {
     let user = req.body as UserInsert
     const exists = await userService.fetchUserByEmail(user.email)
     if(exists){
-        throw new errors.BadRequestError({message: "Email already in use."})
+        throw new errors.BadRequestError({message: {email:"Email already in use."}})
     }
     user.password = hashPassword(user.password!)
     const insertedUser = await userService.insertUser(user)
@@ -106,7 +106,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 export const resetPassword = async (req: Request, res: Response) => {
     const {error: validationError} = userValidator.userUpdateSchema.validate(req.body)
     if (validationError) {
-        throw new errors.BadRequestError({message:validationError.details[0].message})
+        throw new errors.BadRequestError({message: ParseValidationErrors(validationError)})
     } 
     const { password } = req.body
 
@@ -153,7 +153,7 @@ export const updateUser = async(req: AuthenticatedReq, res: Response) => {
 
     const {error: validationError} = userValidator.userUpdateSchema.validate(req.body)
     if(validationError){
-        throw new errors.ValidationError({message:validationError.details[0].message})
+        throw new errors.ValidationError({message: ParseValidationErrors(validationError)})
     }
 
     if(req.body["password"]) {
@@ -198,7 +198,7 @@ export const deleteUser = async (req: AuthenticatedReq, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
     const {error: validationError, value} = userValidator.userLoginSchema.validate(req.body)
     if(validationError) {
-        throw new errors.ValidationError({message: validationError.details[0].message})
+        throw new errors.ValidationError({message: ParseValidationErrors(validationError)})
     }
 
     const {
@@ -218,7 +218,7 @@ export const loginUser = async (req: Request, res: Response) => {
     }
 
     if(user.isBanned) {
-        throw new errors.BadRequestError({message: "User is banned"})
+        throw new errors.BadRequestError({message: {email: "User is banned"}})
     }
 
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
@@ -292,7 +292,7 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
     const {error: validationError} = userValidator.googleCodeSchema.validate(req.query)
 
     if(validationError) {
-        throw new errors.BadRequestError({message: validationError.details[0].message})
+        throw new errors.BadRequestError({message: ParseValidationErrors(validationError)})
     }
 
 
