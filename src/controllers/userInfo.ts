@@ -13,7 +13,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3"
 import { s3Client } from "../s3Bucket"
 import errors from "../errors"
 import ParseValidationErrors from "../utils/parseValidationError"
-import { redisClient } from "../../redisClient"
+import { redisClient } from "../redisClient"
 
 const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!

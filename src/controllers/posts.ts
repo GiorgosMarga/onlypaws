@@ -11,7 +11,7 @@ import errors from "../errors";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "../s3Bucket";
 import { randomUUID } from "crypto";
-import {redisClient} from "../../redisClient"  
+import {redisClient} from "../redisClient"  
 
 const updatePost = async (req: AuthenticatedReq, res: Response) => {
     const postId = req.params["postId"] as string

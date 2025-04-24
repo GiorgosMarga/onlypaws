@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../errors/ApiError";
-import logError from "../../logger";
+import logError from "../logger";
 
 export default function errorHandler(
     err: Error,
