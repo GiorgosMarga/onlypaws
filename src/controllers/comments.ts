@@ -5,6 +5,8 @@ import { commentService } from "../services/comments";
 import { StatusCodes } from "http-status-codes";
 import { AuthenticatedReq } from "../middlewares/authorize";
 import { commentsValidator } from "../validators/comments";
+import ParseValidationErrors from "../utils/parseValidationError";
+import post from "../validators/post";
 
 const getComments = async (req: Request, res: Response) => {
     const postId  = req.params["postId"] as string
@@ -30,7 +32,7 @@ const createComment = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
     const {error: validationError} = commentsValidator.createComment.validate(req.body)
     if(validationError) {
-        throw new errors.BadRequestError({message: validationError.details[0].message})
+        throw new errors.BadRequestError({message: ParseValidationErrors(validationError)})
     }
 
     const comment = await commentService.insertComment({...req.body, userId: user.id})
@@ -61,7 +63,7 @@ const deleteComment = async (req: AuthenticatedReq, res: Response) => {
         throw new errors.NotAuthorizedError({message: "You are not authorized to perform this action"})
     }
 
-    const result = await commentService.deleteComment(commentId)
+    const result = await commentService.deleteComment(commentId, comment.id)
     if(!result) {
         throw new errors.InternalServerError({message: `Could not delete comment with id: ${commentId}`})
     }

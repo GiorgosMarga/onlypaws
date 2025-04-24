@@ -1,3 +1,4 @@
+dotenv.config()
 import express, {type Express} from "express";
 import { userRouter } from "./routes/users";
 import { userInfoRouter } from "./routes/userInfo";
@@ -13,11 +14,10 @@ import { followersRouter } from "./routes/followers";
 import { commentsRouter } from "./routes/comments";
 import postSavesRouter from "./routes/postSaves"
 import notFound from "./middlewares/notFound"
-dotenv.config()
 import cors from "cors"
 
-export const app: Express = express()
-
+const app: Express = express()
+ 
 
 app.use(morgan("dev"))
 app.use(cors({

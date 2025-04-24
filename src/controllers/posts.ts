@@ -11,8 +11,7 @@ import errors from "../errors";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { s3Client } from "../s3Bucket";
 import { randomUUID } from "crypto";
-import user from "../validators/user";
-
+import {redisClient} from "../../redisClient"  
 
 const updatePost = async (req: AuthenticatedReq, res: Response) => {
     const postId = req.params["postId"] as string
@@ -65,7 +64,14 @@ const getPosts = async (req: AuthenticatedReq, res: Response) => {
         limit = 10
     }
 
+    const cachedPosts = await redisClient.get(`posts`)
+    if(cachedPosts) {
+        console.log("Cache hit")
+        return res.status(StatusCodes.OK).json({posts: JSON.parse(cachedPosts)})
+    }
+
     const posts = await postsService.getPosts(page,limit, user ? user.id : null)
+    await redisClient.setEx(`posts`, 10, JSON.stringify(posts))
 
     res.status(StatusCodes.OK).json({posts})
 }
@@ -94,8 +100,6 @@ const createPost = async (req: AuthenticatedReq, res: Response) => {
     }
 
     if(!req.file){
-        console.log(req.file)
-        console.log(req.body)
         throw new errors.BadRequestError({message: "Error reading content"})
     }
     const user = req.user!
@@ -109,7 +113,11 @@ const createPost = async (req: AuthenticatedReq, res: Response) => {
     }
 
     const command = new PutObjectCommand(params)
+    console.time('uploading')
+    
     const s3Result = await s3Client.send(command)
+    
+    console.timeEnd('uploading')
 
     if(!s3Result) {
         throw new errors.InternalServerError({message: "Error uploading file to S3"})

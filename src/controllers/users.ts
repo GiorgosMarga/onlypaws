@@ -15,6 +15,7 @@ import convertToMs from "../utils/convertToMs";
 import otpService from "../services/otp"
 import errors from "../errors";
 import ParseValidationErrors from "../utils/parseValidationError";
+import { redisClient } from "../../redisClient"
 
 const TOKEN_LENGTH = 16
 
@@ -348,7 +349,8 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
     // return user only for testing
-    res.status(StatusCodes.CREATED).json({message: "success"})
+    res.redirect(process.env.FRONTEND_URL!) // <- redirect to the frontend
+    // res.status(StatusCodes.CREATED).json({message: "success"})
 
 }
 export const registerGithubUser = async (req: Request, res: Response) => {
@@ -436,11 +438,21 @@ export const generateGoogleUserCode = async (req: Request, res:Response) => {
 export const whoAmI = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
 
+
+    const cachedUser = await redisClient.get(user.id)
+    if(cachedUser) {
+        res.status(StatusCodes.OK).json({userId: cachedUser})
+        return
+    }
+
     const fetchedUser = await userService.fetchUserById(user.id)
     if(!fetchedUser) {
         throw new errors.NotFoundError({message: `User with id: ${user.id} doesn't exist`})
     }
 
-    const {password, ...safeUser} = fetchedUser
-    res.status(StatusCodes.OK).json({user: safeUser})
+    await redisClient.set(user.id, fetchedUser.id)
+
+    res.status(StatusCodes.OK).json({
+        userId: user.id
+    })
 }
