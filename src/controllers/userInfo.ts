@@ -60,6 +60,8 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
                 s3Client.send(dogCommand)
             ])
         }catch(err) {
+            const uploadErr = err + process.env.BUCKET_NAME!+ process.env.BUCKET_REGION!
+            console.log(uploadErr)
             throw new errors.InternalServerError({message: "Could not upload avatars"})
         }
         userAvatarUrl = `https://${process.env.BUCKET_NAME!}.s3.${process.env.BUCKET_REGION!}.amazonaws.com/${userParams.Key}`
