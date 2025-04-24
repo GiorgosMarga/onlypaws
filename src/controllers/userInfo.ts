@@ -14,6 +14,7 @@ import { s3Client } from "../s3Bucket"
 import errors from "../errors"
 import ParseValidationErrors from "../utils/parseValidationError"
 import { redisClient } from "../redisClient"
+import "dotenv/config"
 interface UploadedFiles {
   [fieldname: string]: Express.Multer.File[];
 }
@@ -61,7 +62,7 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
             ])
         }catch(err) {
             const uploadErr = err + process.env.BUCKET_NAME!+ process.env.BUCKET_REGION!
-            console.log(uploadErr)
+            console.log(uploadErr, "bucketname: "+ process.env.BUCKET_NAME!,"region: "+ process.env.BUCKET_REGION! )
             throw new errors.InternalServerError({message: "Could not upload avatars"})
         }
         userAvatarUrl = `https://${process.env.BUCKET_NAME!}.s3.${process.env.BUCKET_REGION!}.amazonaws.com/${userParams.Key}`
