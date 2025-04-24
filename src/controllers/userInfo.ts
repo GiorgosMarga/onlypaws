@@ -1,4 +1,4 @@
-import type { Request, Response } from "express"
+import { type Request, type Response } from "express"
 import { uuidSchema } from "../validators/uuid"
 import BadRequestError from "../errors/BadRequestError"
 import userInfoService from "../services/userInfo"
@@ -14,7 +14,9 @@ import { s3Client } from "../s3Bucket"
 import errors from "../errors"
 import ParseValidationErrors from "../utils/parseValidationError"
 import { redisClient } from "../redisClient"
-
+interface UploadedFiles {
+  [fieldname: string]: Express.Multer.File[];
+}
 const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
     const userInfoBody = JSON.parse(req.body.userInfo)
@@ -31,24 +33,24 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     if(!req.files) {  
         throw new errors.BadRequestError({message: "Two avatars are required"})
     }
-    if(!req.files["userPic"]) {
+    if(!(req.files as UploadedFiles)["userPic"]) {
         throw new errors.BadRequestError({message: "Please upload you profile image."})
     }
-    if(!req.files["dogPic"]) {
+    if(!(req.files as UploadedFiles)["dogPic"]) {
         throw new errors.BadRequestError({message: "Please upload you dog's cute face."})
     }
     if(req.files) {
         const userParams = {
             Bucket: process.env.BUCKET_NAME!,
             Key: randomUUID(),
-            Body: req.files["userPic"][0]?.buffer,
-            ContentType: req.files["userPic"][0]?.mimetype
+            Body: (req.files as UploadedFiles)["userPic"][0]?.buffer,
+            ContentType: (req.files as UploadedFiles)["userPic"][0]?.mimetype
         }
         const dogParams = {
             Bucket: process.env.BUCKET_NAME!,
             Key: randomUUID(),
-            Body: req.files["dogPic"][0]?.buffer,
-            ContentType: req.files["dogPic"][0]?.mimetype
+            Body: (req.files as UploadedFiles)["dogPic"][0]?.buffer,
+            ContentType: (req.files as UploadedFiles)["dogPic"][0]?.mimetype
         }
         const userCommand = new PutObjectCommand(userParams)
         const dogCommand = new PutObjectCommand(dogParams)
@@ -134,8 +136,8 @@ const getUserInfo = async (req: Request, res: Response) => {
 
     const cachedUserInfo = await redisClient.get(`userInfo-${id}`)
     if(cachedUserInfo){
-        console.log("Cache hit")
-        return res.status(StatusCodes.OK).json({userInfo: JSON.parse(cachedUserInfo)})
+        res.status(StatusCodes.OK).json({userInfo: JSON.parse(cachedUserInfo)})
+        return
     }
      const userInfo = await userInfoService.fetchUserInfo(id)
     if(!userInfo) {

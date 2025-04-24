@@ -66,8 +66,8 @@ const getPosts = async (req: AuthenticatedReq, res: Response) => {
 
     const cachedPosts = await redisClient.get(`posts`)
     if(cachedPosts) {
-        console.log("Cache hit")
-        return res.status(StatusCodes.OK).json({posts: JSON.parse(cachedPosts)})
+        res.status(StatusCodes.OK).json({posts: JSON.parse(cachedPosts)})
+        return
     }
 
     const posts = await postsService.getPosts(page,limit, user ? user.id : null)
