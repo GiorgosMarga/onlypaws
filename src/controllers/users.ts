@@ -72,8 +72,8 @@ export const createUser = async (req:Request, res:Response) => {
 
     const [accessToken, refreshToken] = await tokenService.createTokens(insertedUser)
 
-    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
+     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true, sameSite:"none", secure:true }); // <- 1 h
+    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true, sameSite:"none", secure:true });
     // return user only for testing
     const {password, ...safeUser} = insertedUser
     res.status(StatusCodes.CREATED).json({user:safeUser})
