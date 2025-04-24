@@ -13,6 +13,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3"
 import { s3Client } from "../s3Bucket"
 import errors from "../errors"
 import ParseValidationErrors from "../utils/parseValidationError"
+import { redisClient } from "../../redisClient"
 
 const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
@@ -131,11 +132,17 @@ const getUserInfo = async (req: Request, res: Response) => {
         throw new BadRequestError({message: `Invalid id: ${id}`})
     }
 
-    const userInfo = await userInfoService.fetchUserInfo(id)
+    const cachedUserInfo = await redisClient.get(`userInfo-${id}`)
+    if(cachedUserInfo){
+        console.log("Cache hit")
+        return res.status(StatusCodes.OK).json({userInfo: JSON.parse(cachedUserInfo)})
+    }
+     const userInfo = await userInfoService.fetchUserInfo(id)
     if(!userInfo) {
         throw new NotFoundError({message: `Could not find userInfo for user: ${id}`})
     }
 
+    await redisClient.setEx(`userInfo-${id}`, 10, JSON.stringify(userInfo))
     res.status(StatusCodes.OK).json({userInfo})
 }
 

@@ -36,6 +36,13 @@
       "when": 1745242882555,
       "tag": "0004_quick_gladiator",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1745346450757,
+      "tag": "0005_thick_ironclad",
+      "breakpoints": true
     }
   ]
 }

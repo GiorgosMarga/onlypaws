@@ -18,6 +18,7 @@ export const refreshToken = async (req: Request, res: Response) => {
         throw new BadRequestError({message: "Missing token"})
     }
 
+    console.log(tokenPayload)
     // delete old refresh token and issue a new one together with an access token
     const isValid = await tokenService.deleteRefreshToken(tokenPayload.id, tokenPayload.userId)
 
@@ -37,7 +38,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
     res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d"), httpOnly: true });
 
-    res.status(StatusCodes.OK).json({accessToken,refreshToken})
+    res.status(StatusCodes.OK).json({userId: user.id})
 }
 
 export const revokeToken = async (req: Request, res: Response) => {
