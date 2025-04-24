@@ -15,7 +15,7 @@ import convertToMs from "../utils/convertToMs";
 import otpService from "../services/otp"
 import errors from "../errors";
 import ParseValidationErrors from "../utils/parseValidationError";
-import { redisClient } from "../../redisClient"
+import { redisClient } from "../redisClient"
 
 const TOKEN_LENGTH = 16
 
