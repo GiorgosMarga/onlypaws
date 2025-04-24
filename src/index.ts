@@ -21,7 +21,7 @@ const app: Express = express()
 
 app.use(morgan("dev"))
 app.use(cors({
-  origin: "http://localhost:3000", // Allow frontend origin
+  origin: process.env.FRONTEND_URL, // Allow frontend origin
   credentials: true, // Allow cookies & authentication headers
 }));
 app.use(express.json({limit: 1024*1024*100}))
