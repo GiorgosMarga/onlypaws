@@ -8,8 +8,7 @@
     "db/push": "npx drizzle-kit migrate",
     "db/pull": "npx drizzle-kit pull",
     "dev": "tsx watch src/index.ts",
-    "test": "jest --detectOpenHandles",
-    "build": "tsc",
+    "build": "tsup src/index.ts --out-dir dist --format esm --target node18",
     "start": "node dist/index.js"
   },
   "keywords": [],
@@ -47,6 +46,7 @@
     "@types/pg": "^8.11.11",
     "drizzle-kit": "^0.30.5",
     "ts-node": "^10.9.2",
+    "tsup": "^8.4.0",
     "tsx": "^4.19.3",
     "typescript": "^5.8.2"
   }
