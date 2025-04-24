@@ -223,8 +223,8 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
 
-    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
+    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true, sameSite:"none", secure:true }); // <- 1 h
+    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true, sameSite:"none", secure:true }); // <- 7 days
     // return user only for testing
     // res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: refreshToken})
     res.status(StatusCodes.OK).json({userId: user.id})
@@ -346,8 +346,8 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
 
     
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
-    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
+    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true, sameSite:"none", secure:true }); // <- 1 h
+    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true, sameSite:"none", secure:true });
     // return user only for testing
     res.redirect(process.env.FRONTEND_URL!) // <- redirect to the frontend
     // res.status(StatusCodes.CREATED).json({message: "success"})
@@ -415,8 +415,8 @@ export const registerGithubUser = async (req: Request, res: Response) => {
 
     // TODO: change this to 15m
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
-    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true }); // <- 7 days
+    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true, sameSite:"none", secure:true }); // <- 1 h
+    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true, sameSite:"none", secure:true });
     // return user only for testing
     res.status(StatusCodes.CREATED).json({message: "success"})
 
