@@ -5,7 +5,7 @@ import { sql } from "drizzle-orm";
 export const userInfoTable = schema.table("user_info", {
     userId: uuid("user_id").references(() => usersTable.id, {onDelete: "cascade"}).notNull().primaryKey(),
     birthDate: timestamp("birth_date").notNull().default(sql`CURRENT_TIMESTAMP`),
-    bio: text(),
+    bio: text("bio"),
     dogName: varchar("dog_name", {length: 255}).notNull().default("Unknown"),
     name: varchar("name", {length: 255}).notNull(),
     dogAge: integer("dog_age"),
