@@ -41,7 +41,6 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
         throw new errors.BadRequestError({message: "Please upload you dog's cute face."})
     }
     if(req.files) {
-        console.log("Files:",req.files)
         const userParams = {
             Bucket: process.env.BUCKET_NAME!,
             Key: randomUUID(),
@@ -62,8 +61,7 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
                 s3Client.send(dogCommand)
             ])
         }catch(err) {
-            const uploadErr = err + process.env.BUCKET_NAME!+ process.env.BUCKET_REGION!
-            console.log(uploadErr, "bucketname: "+ process.env.BUCKET_NAME!,"region: "+ process.env.BUCKET_REGION! )
+            console.log(err)
             throw new errors.InternalServerError({message: "Could not upload avatars"})
         }
         userAvatarUrl = `https://${process.env.BUCKET_NAME!}.s3.${process.env.BUCKET_REGION!}.amazonaws.com/${userParams.Key}`
