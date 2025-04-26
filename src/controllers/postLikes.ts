@@ -39,24 +39,17 @@ const removeLikePost = async (req: AuthenticatedReq, res: Response) => {
     res.status(StatusCodes.OK).json({message: "Success"})
 }
 
-const getLikes = async (req: AuthenticatedReq, res: Response) => {
-    const postId = req.params["postId"] as string
+const getLikedPosts = async (req: AuthenticatedReq, res: Response) => {
 
-    const {error: idError} = uuidSchema.validate(postId)
-    if(idError) {
-        throw new errors.BadRequestError({message: `Invalid id: ${postId}`})
-    }
+    const user = req.user!
 
-    const result = await postAnalyticsService.getLikes(postId)
-    if(!result) {
-        throw new errors.InternalServerError({message: "Could not remove like from post"})
-    }
-    res.status(StatusCodes.OK).json({likes: result.likes})
+    const posts = await postLikesService.getLikedPosts(user.id)
+    res.status(StatusCodes.OK).json({posts})
 
 }
    
 export default {
     likePost,
     removeLikePost,
-    getLikes
+    getLikedPosts
 }

@@ -5,4 +5,4 @@ export const postLikesRouter = Router()
 
 postLikesRouter.post("/:postId",authenticate, postLikesControllers.likePost)
 postLikesRouter.delete("/:postId",authenticate,postLikesControllers.removeLikePost)
-postLikesRouter.get("/:postId",postLikesControllers.getLikes)
+postLikesRouter.get("/",authenticate, postLikesControllers.getLikedPosts)

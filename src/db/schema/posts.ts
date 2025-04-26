@@ -56,3 +56,8 @@ export const postSelectionPublicView = {
     userAvatar: postsView.userAvatar,
     dogAvatar: postsView.dogAvatar,
 }
+export const postSelectionPrivateView = {
+    ...postSelectionPublicView,
+    isLiked: postLikesTable.userId,
+    isSaved: postSavesTable.userId,
+}

@@ -24,7 +24,10 @@ const updateComment = async (comment: Comment) => {
 
 const deleteComment = async (commentId: string, postId: string) => {
     const result = await db.transaction(async (tx) => { 
-        const deletedComment = await tx.delete(commentsTable).where(eq(commentsTable.id, commentId)).returning()
+        const deletedComment = await tx.delete(commentsTable).where(eq(commentsTable.id, commentId)).returning() as QueryResult<Comment>[]
+        if(deletedComment.length === 0) {
+            return [] as QueryResult[]
+        }
         await postAnalyticsService.updatePostAnalyticsWithTx(tx,postId, "comments", false)
         return deletedComment as QueryResult[]
     })
