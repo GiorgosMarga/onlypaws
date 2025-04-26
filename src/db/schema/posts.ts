@@ -1,4 +1,4 @@
-import { uuid ,varchar, text, timestamp, pgView, QueryBuilder} from "drizzle-orm/pg-core";
+import { uuid ,varchar, text, timestamp, QueryBuilder, uniqueIndex, index} from "drizzle-orm/pg-core";
 import { schema, usersTable } from "./users";
 import { eq, sql } from "drizzle-orm";
 import { postAnalyticsTable } from "./postAnalytics";
@@ -15,7 +15,10 @@ export const postsTable = schema.table("posts", {
     mediaUrl: text("media_url").array().notNull(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow().$onUpdate(() => new Date()),
-})
+}, table => [
+    index("post_user_id").on(table.userId),
+    uniqueIndex("post_id").on(table.id),
+])
 export const postSelectionPublic = {
     likes: postAnalyticsTable.likes,
     id: postsTable.id,

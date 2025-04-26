@@ -1,4 +1,4 @@
-import { integer, primaryKey, text, timestamp, uuid,varchar } from "drizzle-orm/pg-core";
+import { integer, primaryKey, text, timestamp, uniqueIndex, uuid,varchar } from "drizzle-orm/pg-core";
 import { schema, usersTable } from "./users";
 import { sql } from "drizzle-orm";
 
@@ -13,4 +13,6 @@ export const userInfoTable = schema.table("user_info", {
     userAvatar: varchar("user_avatar"),
     dogAvatar: varchar("dog_avatar"),
     updatedAt: timestamp("updated_at").$onUpdate(() => new Date())
-})
+},table => [
+        uniqueIndex("user_id").on(table.userId)
+])

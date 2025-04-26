@@ -1,0 +1,1 @@
+ALTER TABLE "onlypaws"."followers" RENAME COLUMN "createdAt" TO "created_at";

@@ -1,4 +1,4 @@
-import { integer, uuid } from "drizzle-orm/pg-core";
+import { integer, uuid,uniqueIndex } from "drizzle-orm/pg-core";
 import { postsTable } from "./posts";
 import { schema } from "./users";
 
@@ -9,4 +9,7 @@ export const postAnalyticsTable = schema.table("post_analytics", {
     saves: integer().default(0),
     shares: integer().default(0),
     views: integer().default(0),
-})
+},
+table => [
+        uniqueIndex("analytics_post_id").on(table.postId)
+])

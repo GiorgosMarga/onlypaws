@@ -40,29 +40,29 @@ app.use(errorHandler)
 
 const server = app.listen(process.env.PORT, () => console.log(`Server is running at :${process.env.PORT}`))
 
-process.on("SIGTERM", () => {
-    console.log("Received SIGTERM")
-    server.close(async () => {
-        try{
-            await pool.end()
-            console.log("Successfully disconnected from db")
-        }catch (err) {
-            console.log("Error disconnecting from db: ",err)
-        }
-        console.log("Terminating server")
-        process.exit(0)
-    })
+
+
+const gracefulShutdown = async (signal: string) => {
+  console.log(`Received ${signal}`);
+  server.close(async () => {
+    try {
+      await pool.end();
+      console.log("Successfully disconnected from db");
+    } catch (err) {
+      console.error("Error disconnecting from db:", err);
+    }
+    console.log("Terminating server");
+    process.exit(0);
+  });
+};
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
+process.on("SIGINT", () =>  gracefulShutdown("SIGINT"))
+process.on("uncaughtException", (reason) => {
+    console.error(reason)
+    gracefulShutdown("")
 })
-process.on("SIGINT", () => {
-    console.log("Received SIGINT")
-    server.close(async () => {
-        try{
-            await pool.end()
-            console.log("Successfully disconnected from db")
-        }catch (err) {
-            console.log("Error disconnecting from db: ",err)
-        }
-        console.log("Terminating server")
-        process.exit(0)
-    })
+process.on("unhandledRejection", (reason) => {
+    console.error(reason)
+    gracefulShutdown("")
 })

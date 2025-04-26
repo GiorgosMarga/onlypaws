@@ -4,6 +4,7 @@ import { AuthenticatedReq } from "../middlewares/authorize"
 import followersService from "../services/followers"
 import { uuidSchema } from "../validators/uuid"
 import { Response } from "express"
+import ParseValidationErrors from "../utils/parseValidationError"
 
 
 const getFollowers = async (req: AuthenticatedReq, res: Response) => {
@@ -31,6 +32,7 @@ const getFollowings = async (req: AuthenticatedReq, res: Response) => {
     const followings = await followersService.getFollowing(userId)
     res.status(StatusCodes.OK).json({followings})
 }
+// TODO: put userId in the reqs body
 
 const follow = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
@@ -70,9 +72,25 @@ const unfollow = async (req: AuthenticatedReq, res: Response) => {
 
     res.status(StatusCodes.OK).json({"message": "Success"})
 }
+
+const isFollowing = async (req: AuthenticatedReq, res: Response) => {
+    const user = req.user!
+    
+    const followingId = req.params["userId"]
+    const {error: validationError} = uuidSchema.validate(followingId)
+    if(validationError) {
+        throw new errors.BadRequestError({message: ParseValidationErrors(validationError)})
+    }
+
+
+    const isFollowing = await followersService.isFollowing(user.id,followingId)
+
+    res.status(StatusCodes.OK).json({isFollowing})
+}
 export const followersControllers = {
     getFollowers,
     getFollowings,
     follow,
-    unfollow
+    unfollow,
+    isFollowing
 }

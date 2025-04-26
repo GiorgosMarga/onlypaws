@@ -25,9 +25,14 @@ const removeFollow = async (followerId: string, followingId: string) => {
     return res[0] ?? null
 }
 
+const isFollowing = async (followerId: string, followingId: string) => {
+    const res = await db.select({userId: followersTable.followerUserId}).from(followersTable).where(and(eq(followersTable.followerUserId, followerId),eq(followersTable.followingUserId, followingId)))
+    return res.length > 0 ? true : false
+}
 export default {
     followUser,
     removeFollow,
     getFollowers,
-    getFollowing
+    getFollowing,
+    isFollowing
 }
