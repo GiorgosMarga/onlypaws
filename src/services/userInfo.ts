@@ -1,10 +1,10 @@
-import { eq, sql } from "drizzle-orm"
+import { eq, like, sql } from "drizzle-orm"
 import { db } from "../db"
 import { userInfoTable } from "../db/schema/userInfo"
 import type { UserInfo, UserInfoInsert } from "../models/userInfo.model"
 import { followersTable } from "../db/schema/follows"
 
-const fetchUserInfo = async (userId: string) => {
+const fetchUserInfoById = async (userId: string) => {
     const followersCountQuery = db
     .select({ count: sql<number>`COUNT(*)` })
     .from(followersTable)
@@ -42,6 +42,22 @@ const fetchUserInfo = async (userId: string) => {
     } 
 }
 
+const fetchUserInfoByUsername = async (username: string) => {
+    const userInfoQuery = await db
+    .select({
+        userId: userInfoTable.userId,
+        name: userInfoTable.name,
+        dogName: userInfoTable.dogName,
+        userAvatar: userInfoTable.userAvatar,
+        dogAvatar: userInfoTable.dogAvatar,
+    })
+    .from(userInfoTable)
+    .where(like(userInfoTable.name, `${username}%`))
+
+
+    return userInfoQuery.length === 0 ? null : userInfoQuery
+}
+
 
 const deleteUserInfo = async (userId: string) => {
     const deletedUserInfo = await db.delete(userInfoTable).where(eq(userInfoTable.userId, userId)).returning()
@@ -58,7 +74,8 @@ const insertUserInfo = async (userInfo: UserInfoInsert) => {
     return insertedUserInfo.length === 0 ? null : insertedUserInfo[0] 
 }
 export default {
-    fetchUserInfo,
+    fetchUserInfoById,
+    fetchUserInfoByUsername,
     deleteUserInfo,
     updateUserInfo,
     insertUserInfo

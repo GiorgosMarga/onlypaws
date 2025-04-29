@@ -71,7 +71,7 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
 
     const userInfo = {...userInfoBody, userId: user.id, birthDate: new Date(userInfoBody["birthDate"]), userAvatar: userAvatarUrl, dogAvatar: dogAvatarUrl}
     let insertedUserInfo;
-    const exists = await userInfoService.fetchUserInfo(user.id)
+    const exists = await userInfoService.fetchUserInfoById(user.id)
     if(exists) {
         insertedUserInfo = await userInfoService.updateUserInfo(userInfo)    
     }else {
@@ -130,23 +130,29 @@ const deleteUserInfo = async (req: AuthenticatedReq, res: Response) => {
 const getUserInfo = async (req: Request, res: Response) => {
     const id = req.params["userId"] as string
 
+    const query = req.query
 
-    const {error: validationError} = uuidSchema.validate(id)
-    if(validationError) {
-        throw new BadRequestError({message: `Invalid id: ${id}`})
+    let userInfo
+
+    if("u" in query){
+        userInfo = await userInfoService.fetchUserInfoByUsername(query["u"] as string)
+    }else {
+        const {error: validationError} = uuidSchema.validate(id)
+        if(validationError) {
+            throw new BadRequestError({message: `Invalid id: ${id}`})
+        }
+        const cachedUserInfo = await redisClient.get(`userInfo-${id}`)
+        if(cachedUserInfo){
+            res.status(StatusCodes.OK).json({userInfo: JSON.parse(cachedUserInfo)})
+            return
+        }
+        userInfo = await userInfoService.fetchUserInfoById(id)
+        if(!userInfo) {
+            throw new NotFoundError({message: `Could not find userInfo for user: ${id}`})    
+        }
+        await redisClient.setEx(`userInfo-${id}`, 10, JSON.stringify(userInfo))
     }
 
-    const cachedUserInfo = await redisClient.get(`userInfo-${id}`)
-    if(cachedUserInfo){
-        res.status(StatusCodes.OK).json({userInfo: JSON.parse(cachedUserInfo)})
-        return
-    }
-     const userInfo = await userInfoService.fetchUserInfo(id)
-    if(!userInfo) {
-        throw new NotFoundError({message: `Could not find userInfo for user: ${id}`})
-    }
-
-    await redisClient.setEx(`userInfo-${id}`, 10, JSON.stringify(userInfo))
     res.status(StatusCodes.OK).json({userInfo})
 }
 

@@ -12,7 +12,7 @@ declare global {
 export const pool = global._pool || new Pool({
     connectionString: process.env.DB_URI!,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
+    connectionTimeoutMillis: 30000,
     statement_timeout: 3000,
     idle_in_transaction_session_timeout: 6000,
     query_timeout: 3000,
