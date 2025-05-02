@@ -34,9 +34,10 @@ const insertMessage = async (message: any) => {
         parsedMessage.conversationId = convId
     }
 
-    // TODO: change this
-    delete parsedMessage.createdAt
-    const res = await db.insert(messagesTable).values(parsedMessage).returning()
+    const res = await db.insert(messagesTable).values({
+        ...parsedMessage,
+        createdAt: new Date()
+    }).returning()
     return res.length > 0 ? res[0] : null
 }
 

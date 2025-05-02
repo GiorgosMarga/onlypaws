@@ -10,6 +10,7 @@ const createConversation = async (user1:string, user2:string) => {
     const newConv = await db
     .insert(conversationsTable)
     .values({user1,user2})
+    .onConflictDoNothing()
     .returning({id: conversationsTable.id})
 
     return newConv.length > 0 ? newConv[0].id : null
@@ -88,6 +89,20 @@ const conversationExists = async (from: string, to: string) => {
     return conversation.length > 0 ? conversation[0].id : null
 }
 
+
+const getConversation = async (convId: string) => {
+    const conv = await db
+    .select({
+        id: conversationsTable.id,
+        user1: conversationsTable.user1,
+        user2: conversationsTable.user2
+    })
+    .from(conversationsTable)
+    .where(eq(conversationsTable.id, convId))
+
+    return conv.length > 0 ? conv[0] : null
+}
+
 const getConversationMessages = async (userId:string, conversationId: string, limit: number, page:number) => {
     const offset = calculateOffset(page,limit)
     const res = await db
@@ -120,5 +135,6 @@ export default {
     createConversation,
     getAllConversations,
     conversationExists,
-    getConversationMessages
+    getConversationMessages,
+    getConversation
 }

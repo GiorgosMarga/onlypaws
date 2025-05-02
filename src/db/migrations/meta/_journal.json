@@ -78,6 +78,13 @@
       "when": 1745742399219,
       "tag": "0010_thankful_nehzno",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1746099356691,
+      "tag": "0011_needy_santa_claus",
+      "breakpoints": true
     }
   ]
 }

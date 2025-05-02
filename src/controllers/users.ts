@@ -16,6 +16,7 @@ import otpService from "../services/otp"
 import errors from "../errors";
 import ParseValidationErrors from "../utils/parseValidationError";
 import { redisClient } from "../redisClient"
+import setCookies from "../utils/setCookies";
 
 const TOKEN_LENGTH = 16
 
@@ -72,8 +73,7 @@ export const createUser = async (req:Request, res:Response) => {
 
     const [accessToken, refreshToken] = await tokenService.createTokens(insertedUser)
 
-     res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true, sameSite:"none", secure:true }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true, sameSite:"none", secure:true });
+    setCookies(res,accessToken,refreshToken)
     // return user only for testing
     const {password, ...safeUser} = insertedUser
     res.status(StatusCodes.CREATED).json({user:safeUser})
@@ -223,8 +223,9 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
 
-    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true, sameSite:"none", secure:true }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true, sameSite:"none", secure:true }); // <- 7 days
+    
+    setCookies(res,accessToken,refreshToken)
+    // days
     // return user only for testing
     // res.status(StatusCodes.OK).json({user, access_token: accessToken, refresh_token: refreshToken})
     res.status(StatusCodes.OK).json({userId: user.id})
@@ -283,8 +284,7 @@ export const logout = async (req: AuthenticatedReq, res: Response) => {
     }
 
 
-    res.cookie("access_token","")
-    res.cookie("refresh_token","")
+    setCookies(res,"","")
     res.status(StatusCodes.OK).json({message: "Success"})
 }
 
@@ -342,12 +342,8 @@ export const registerGoogleUser = async (req: Request, res: Response) => {
         await userService.updateUser({...user,google_id: userData.id})
     }
 
-    // TODO: change this to 15m
-
-    
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
-    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true, sameSite:"none", secure:true }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true, sameSite:"none", secure:true });
+    setCookies(res,accessToken,refreshToken)
     // return user only for testing
     res.redirect(process.env.FRONTEND_URL!) // <- redirect to the frontend
     // res.status(StatusCodes.CREATED).json({message: "success"})
@@ -415,8 +411,7 @@ export const registerGithubUser = async (req: Request, res: Response) => {
 
     // TODO: change this to 15m
     const [accessToken, refreshToken] = await tokenService.createTokens(user)
-    res.cookie('access_token',accessToken, { maxAge: convertToMs(1,"h") , httpOnly: true, sameSite:"none", secure:true }); // <- 1 h
-    res.cookie('refresh_token',refreshToken, { maxAge: convertToMs(7,"d") , httpOnly: true, sameSite:"none", secure:true });
+    setCookies(res,accessToken,refreshToken)
     // return user only for testing
     res.status(StatusCodes.CREATED).json({message: "success"})
 

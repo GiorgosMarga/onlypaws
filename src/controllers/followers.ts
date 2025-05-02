@@ -32,11 +32,10 @@ const getFollowings = async (req: AuthenticatedReq, res: Response) => {
     const followings = await followersService.getFollowing(userId)
     res.status(StatusCodes.OK).json({followings})
 }
-// TODO: put userId in the reqs body
 
 const follow = async (req: AuthenticatedReq, res: Response) => {
     const user = req.user!
-    const userToFollow = req.params["userId"] as string
+    const userToFollow = req.body["userId"] as string
 
     // You should not be able to follow urself
     if (user.id === userToFollow) {

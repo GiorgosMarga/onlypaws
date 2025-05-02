@@ -6,6 +6,7 @@ const convRouter = Router()
 convRouter.get("/", authenticate, conversationsControllers.getAllConversations)
 convRouter.post("/", authenticate, conversationsControllers.createConversation)
 convRouter.get("/messages/:convId", authenticate, conversationsControllers.getConversationMessages)
+convRouter.get("/:convId", authenticate, conversationsControllers.getConversation)
 
 export {
     convRouter,
