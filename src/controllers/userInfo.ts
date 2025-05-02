@@ -137,16 +137,15 @@ const getUserInfo = async (req: Request, res: Response) => {
         userInfo = await userInfoService.fetchUserInfoByUsername(query["u"] as string)
     }else if("id" in query) {
         const id = query["id"] as string
-        console.log({id})
         const {error: validationError} = uuidSchema.validate(id)
         if(validationError) {
             throw new BadRequestError({message: `Invalid id: ${id}`})
         }
-        // const cachedUserInfo = await redisClient.get(`userInfo-${id}`)
-        // if(cachedUserInfo){
-        //     res.status(StatusCodes.OK).json({userInfo: JSON.parse(cachedUserInfo)})
-        //     return
-        // }
+        const cachedUserInfo = await redisClient.get(`userInfo-${id}`)
+        if(cachedUserInfo){
+            res.status(StatusCodes.OK).json({userInfo: JSON.parse(cachedUserInfo)})
+            return
+        }
         userInfo = await userInfoService.fetchUserInfoById(id)
         if(!userInfo) {
             throw new NotFoundError({message: `Could not find userInfo for user: ${id}`})    

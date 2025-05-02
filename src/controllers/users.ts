@@ -17,6 +17,7 @@ import errors from "../errors";
 import ParseValidationErrors from "../utils/parseValidationError";
 import { redisClient } from "../redisClient"
 import setCookies from "../utils/setCookies";
+import { env } from "process";
 
 const TOKEN_LENGTH = 16
 
@@ -443,6 +444,15 @@ export const whoAmI = async (req: AuthenticatedReq, res: Response) => {
     const fetchedUser = await userService.fetchUserById(user.id)
     if(!fetchedUser) {
         throw new errors.NotFoundError({message: `User with id: ${user.id} doesn't exist`})
+    }
+
+    console.log(fetchedUser)
+
+    if(!fetchedUser.hasFinishedProfile){
+        res.status(StatusCodes.FORBIDDEN).json({
+            redirect_url: "/profile-setup"
+        })
+        return
     }
 
     await redisClient.set(user.id, fetchedUser.id)

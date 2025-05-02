@@ -3,6 +3,7 @@ import { db } from "../db"
 import { userInfoTable } from "../db/schema/userInfo"
 import type { UserInfo, UserInfoInsert } from "../models/userInfo.model"
 import { followersTable } from "../db/schema/follows"
+import { usersTable } from "../db/schema/users"
 
 const fetchUserInfoById = async (userId: string) => {
     const followersCountQuery = db
@@ -70,7 +71,12 @@ const updateUserInfo = async (userInfo: UserInfo) => {
 }
 
 const insertUserInfo = async (userInfo: UserInfoInsert) => {
-    const insertedUserInfo = await db.insert(userInfoTable).values(userInfo).returning()
+    const insertedUserInfo = await db.transaction(async (tx) => {
+        const insertedUserInfo = await tx.insert(userInfoTable).values(userInfo).returning()
+        await tx.update(usersTable).set({hasFinishedProfile: true}).where(eq(usersTable.id,userInfoTable.userId))
+        return insertedUserInfo
+
+    })
     return insertedUserInfo.length === 0 ? null : insertedUserInfo[0] 
 }
 export default {

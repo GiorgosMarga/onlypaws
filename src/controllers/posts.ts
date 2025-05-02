@@ -64,14 +64,14 @@ const getPosts = async (req: AuthenticatedReq, res: Response) => {
         limit = 10
     }
 
-    const cachedPosts = await redisClient.get(`posts`)
+    const cachedPosts = await redisClient.get(`posts-${user?.id??""}`)
     if(cachedPosts) {
         res.status(StatusCodes.OK).json({posts: JSON.parse(cachedPosts)})
         return
     }
 
     const posts = await postsService.getPosts(page,limit, user ? user.id : null)
-    await redisClient.setEx(`posts`, 10, JSON.stringify(posts))
+    await redisClient.setEx(`posts-${user?.id??""}`, 10, JSON.stringify(posts))
 
     res.status(StatusCodes.OK).json({posts})
 }
