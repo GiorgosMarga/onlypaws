@@ -1,4 +1,4 @@
-import { eq, like, sql } from "drizzle-orm"
+import { and, eq, like, sql } from "drizzle-orm"
 import { db } from "../db"
 import { userInfoTable } from "../db/schema/userInfo"
 import type { UserInfo, UserInfoInsert } from "../models/userInfo.model"
@@ -66,14 +66,27 @@ const deleteUserInfo = async (userId: string) => {
 }
 
 const updateUserInfo = async (userInfo: UserInfo) => {
-    const updatedUserInfo = await db.update(userInfoTable).set(userInfo).where(eq(userInfoTable.userId, userInfo.userId)).returning()
+    const updatedUserInfo = await db.transaction(async (tx) => {
+        const updatedUserInfo = await db.update(userInfoTable).set(userInfo).where(eq(userInfoTable.userId, userInfo.userId)).returning()
+        await db
+        .update(usersTable)
+        .set({hasFinishedProfile: true})
+        .where(and(eq(usersTable.id, userInfoTable.userId),eq(usersTable.hasFinishedProfile,false)))
+        return updatedUserInfo
+    });
+    
     return updatedUserInfo.length === 0 ? null : updatedUserInfo[0] 
 }
 
+// this endpoint is used only, when user stooped setting up his profile during  registering his account
+// during normal setup, the table is inserted through user insert with a transaction
 const insertUserInfo = async (userInfo: UserInfoInsert) => {
     const insertedUserInfo = await db.transaction(async (tx) => {
         const insertedUserInfo = await tx.insert(userInfoTable).values(userInfo).returning()
-        await tx.update(usersTable).set({hasFinishedProfile: true}).where(eq(usersTable.id,userInfoTable.userId))
+        if(insertUserInfo.length === 0){
+            return []
+        }
+        await tx.update(usersTable).set({hasFinishedProfile: true}).where(eq(usersTable.id,insertedUserInfo[0].userId))
         return insertedUserInfo
 
     })

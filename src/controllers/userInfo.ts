@@ -70,13 +70,8 @@ const createUserInfo = async (req: AuthenticatedReq, res: Response) => {
 
 
     const userInfo = {...userInfoBody, userId: user.id, birthDate: new Date(userInfoBody["birthDate"]), userAvatar: userAvatarUrl, dogAvatar: dogAvatarUrl}
-    let insertedUserInfo;
-    const exists = await userInfoService.fetchUserInfoById(user.id)
-    if(exists) {
-        insertedUserInfo = await userInfoService.updateUserInfo(userInfo)    
-    }else {
-        insertedUserInfo = await userInfoService.insertUserInfo(userInfo)
-    }
+    const insertedUserInfo = await userInfoService.insertUserInfo(userInfo)
+    
     if(!insertedUserInfo) {
         throw new InternalServerError({message: "Could not insert a userInfo: "+ userInfo})
     }

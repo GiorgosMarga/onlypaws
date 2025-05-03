@@ -22,7 +22,6 @@ const fetchUsers = async ({page=1,limit=10}:{page:number, limit:number}) => {
 const insertUser = async (user: UserInsert) => {
     const insertedUser = await db.transaction(async (tx) => {
         const newUser = await tx.insert(usersTable).values(user).returning()
-        console.log({user: newUser[0]})
         await tx.insert(userInfoTable).values({userId:newUser[0].id, name:user.username})
         return newUser
     })

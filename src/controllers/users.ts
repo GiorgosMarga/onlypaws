@@ -450,7 +450,7 @@ export const whoAmI = async (req: AuthenticatedReq, res: Response) => {
 
     if(!fetchedUser.hasFinishedProfile){
         res.status(StatusCodes.FORBIDDEN).json({
-            redirect_url: "/profile-setup"
+            redirect_url: "/profile-setup?insert=true"
         })
         return
     }
