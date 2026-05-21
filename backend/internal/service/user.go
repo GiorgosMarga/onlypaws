@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/onlypaws/backend/internal/domain"
-	"github.com/onlypaws/backend/internal/utils"
+	"github.com/onlypaws/internal/domain"
+	"github.com/onlypaws/internal/utils"
 )
 
 type UserService struct {

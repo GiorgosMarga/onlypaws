@@ -4,8 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/onlypaws/backend/internal/domain"
-	"github.com/onlypaws/backend/internal/utils"
+	"github.com/onlypaws/internal/domain"
+	httperrors "github.com/onlypaws/internal/errors"
+	"github.com/onlypaws/internal/utils"
 )
 
 type userHandler struct {
@@ -14,13 +15,14 @@ type userHandler struct {
 
 func RegisterUserHandlers(mux *http.ServeMux, srv domain.UserService) {
 	userHandler := userHandler{srv: srv}
-	mux.HandleFunc("POST /api/v1/users", userHandler.registerUserHandler)
+	mux.HandleFunc("POST /api/v1/users/register", userHandler.registerUserHandler)
+	mux.HandleFunc("POST /api/v1/users/login", userHandler.loginUserHandler)
 }
 
 func (h *userHandler) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	registerBody := &domain.UserCreateParams{}
 	if err := utils.ReadJSON(r, &registerBody); err != nil {
-		utils.WriteJSON(w, http.StatusBadRequest, err)
+		httperrors.BadRequestError(w, r, err)
 		return
 	}
 
@@ -28,13 +30,32 @@ func (h *userHandler) registerUserHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrEmailExists):
-			utils.WriteJSON(w, http.StatusBadRequest, err)
+			httperrors.BadRequestError(w, r, err)
 		default:
-			utils.WriteJSON(w, http.StatusInternalServerError, err)
+			httperrors.InternalServerError(w, r, err)
+		}
+		return
+	}
+	utils.WriteSuccess(w, http.StatusCreated, user)
+}
+
+func (h *userHandler) loginUserHandler(w http.ResponseWriter, r *http.Request) {
+	body := &domain.UserLoginParams{}
+	if err := utils.ReadJSON(r, &body); err != nil {
+		httperrors.BadRequestError(w, r, err)
+		return
+	}
+
+	user, err := h.srv.LoginUser(r.Context(), body)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrInvalidCredentials):
+			httperrors.BadRequestError(w, r, err)
+		default:
+			httperrors.InternalServerError(w, r, err)
 		}
 		return
 	}
 
-	utils.WriteJSON(w, http.StatusBadRequest, user)
-
+	utils.WriteSuccess(w, http.StatusOK, user)
 }

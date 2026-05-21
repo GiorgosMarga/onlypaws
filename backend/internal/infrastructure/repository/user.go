@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/onlypaws/backend/internal/domain"
+	"github.com/onlypaws/internal/domain"
 )
 
 type UsersRepo struct {
@@ -17,14 +17,6 @@ func NewUsersRepo(db *sql.DB) *UsersRepo {
 		db: db,
 	}
 }
-
-// type UserRepository interface {
-// 	CreateUser(context.Context, user.CreateParams) error
-// 	GetUser(context.Context, string) (*UserModel, error)
-// 	DeleteUser(context.Context, string) error
-// 	GetUsers(context.Context) ([]*UserModel, error)
-// 	UpdateUser(context.Context, user.UpdateParams) error
-// }
 
 func (r *UsersRepo) CreateUser(ctx context.Context, user *domain.UserModel) error {
 	query := `INSERT INTO users(email, password_hash) VALUES($1,$2) RETURNING id`
