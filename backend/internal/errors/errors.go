@@ -25,11 +25,19 @@ func writeError(r *http.Request, w http.ResponseWriter, status int, err any) {
 		logError(r, errResponse)
 	}
 }
-func InternalServerError(r *http.Request, w http.ResponseWriter, err any) {
+func InternalServerError(w http.ResponseWriter, r *http.Request, err any) {
 	logError(r, err)
 	writeError(r, w, http.StatusInternalServerError, err)
 }
 
-func BadRequestError(r *http.Request, w http.ResponseWriter, err any) {
+func BadRequestError(w http.ResponseWriter, r *http.Request, err any) {
 	writeError(r, w, http.StatusBadGateway, err)
+}
+
+func NotAuthorizedError(w http.ResponseWriter, r *http.Request) {
+	writeError(r, w, http.StatusUnauthorized, "you are not authorized to perform this action")
+}
+
+func NotFoundError(w http.ResponseWriter, r *http.Request, err any) {
+	writeError(r, w, http.StatusNotFound, err)
 }

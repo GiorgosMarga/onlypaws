@@ -9,8 +9,12 @@ import (
 var (
 	ErrEmailExists        error = errors.New("email already exists")
 	ErrInvalidCredentials error = errors.New("invalid credentials")
-	ErrNotFound           error = errors.New("user doesnt exist")
+	ErrNotFound           error = errors.New("entity not found")
 )
+
+// used in authentication middleware
+type ContextKey string
+const ContextUserKey ContextKey = "user"
 
 type Role string
 
@@ -30,7 +34,12 @@ type UserModel struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	DeletedAt time.Time `json:"deleted_at"`
 }
-
+type AuthedUser struct {
+	Id       string `json:"id"`
+	Email    string `json:"email"`
+	Role     Role   `json:"role"`
+	IsBanned bool   `json:"is_banned"`
+}
 type UserCreateParams struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`

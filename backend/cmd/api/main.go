@@ -16,8 +16,9 @@ import (
 )
 
 type app struct {
-	userService domain.UserService
-	server      http.Server
+	userService    domain.UserService
+	profileService domain.ProfileService
+	server         http.Server
 }
 
 type config struct {
@@ -45,9 +46,11 @@ func main() {
 	log.Println("Connected to DB...")
 
 	userRepository := repository.NewUsersRepo(db)
+	profileRepository := repository.NewProfileRepository(db)
 
 	app := app{
-		userService: service.NewUserService(userRepository),
+		userService:    service.NewUserService(userRepository),
+		profileService: service.NewProfileService(profileRepository),
 		server: http.Server{
 			Addr:              fmt.Sprintf(":%s", cfg.addr),
 			ReadHeaderTimeout: 5 * time.Second,
@@ -62,8 +65,10 @@ func main() {
 	log.Fatal(app.server.ListenAndServe())
 }
 
+// TODO: fix this: app should have a db instance and pass it to handlers and create the services
 func (app *app) registerHandlers() {
 	mux := &http.ServeMux{}
 	httphandler.RegisterUserHandlers(mux, app.userService)
+	httphandler.RegisterProfileHandlers(mux, app.profileService)
 	app.server.Handler = mux
 }

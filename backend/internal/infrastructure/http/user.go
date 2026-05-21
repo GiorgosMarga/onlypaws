@@ -22,7 +22,7 @@ func RegisterUserHandlers(mux *http.ServeMux, srv domain.UserService) {
 func (h *userHandler) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	registerBody := &domain.UserCreateParams{}
 	if err := utils.ReadJSON(r, &registerBody); err != nil {
-		httperrors.BadRequestError(r, w, err)
+		httperrors.BadRequestError(w, r, err)
 		return
 	}
 
@@ -30,9 +30,9 @@ func (h *userHandler) registerUserHandler(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrEmailExists):
-			httperrors.BadRequestError(r, w, err)
+			httperrors.BadRequestError(w, r, err)
 		default:
-			httperrors.InternalServerError(r, w, err)
+			httperrors.InternalServerError(w, r, err)
 		}
 		return
 	}
@@ -42,7 +42,7 @@ func (h *userHandler) registerUserHandler(w http.ResponseWriter, r *http.Request
 func (h *userHandler) loginUserHandler(w http.ResponseWriter, r *http.Request) {
 	body := &domain.UserLoginParams{}
 	if err := utils.ReadJSON(r, &body); err != nil {
-		httperrors.BadRequestError(r, w, err)
+		httperrors.BadRequestError(w, r, err)
 		return
 	}
 
@@ -50,11 +50,12 @@ func (h *userHandler) loginUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, domain.ErrInvalidCredentials):
-			httperrors.BadRequestError(r, w, err)
+			httperrors.BadRequestError(w, r, err)
 		default:
-			httperrors.InternalServerError(r, w, err)
+			httperrors.InternalServerError(w, r, err)
 		}
 		return
 	}
+
 	utils.WriteSuccess(w, http.StatusOK, user)
 }

@@ -39,7 +39,7 @@ type ProfileRepository interface {
 
 type ProfileService interface {
 	CreateProfile(context.Context, *CreateProfileParams) error
-	UpdateProfile(context.Context, *UpdateProfileParams) error
+	UpdateProfile(context.Context, string, *UpdateProfileParams) (*ProfileModel, error)
 	DeleteProfile(context.Context, string) error
 	GetProfile(context.Context, string) (*ProfileModel, error)
 	GetProfiles(context.Context) ([]*ProfileModel, error)
