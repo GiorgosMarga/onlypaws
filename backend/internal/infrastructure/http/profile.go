@@ -69,9 +69,40 @@ func (p *profileHandler) updateUserProfileHandler(w http.ResponseWriter, r *http
 }
 
 func (p *profileHandler) deleteUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+	authedUser := utils.MustGetUser(r)
+	userId := utils.MustGetParam(r, "user_id")
 
+	if userId != authedUser.Id && authedUser.Role != domain.RoleAdmin {
+		httperrors.NotAuthorizedError(w, r)
+		return
+	}
+
+	if err := p.srv.DeleteProfile(r.Context(), userId); err != nil {
+		switch {
+		case errors.Is(err, domain.ErrNotFound):
+			httperrors.NotFoundError(w, r, err)
+		default:
+			httperrors.InternalServerError(w, r, err)
+		}
+		return
+	}
+
+	utils.WriteSuccess(w, http.StatusOK, "success")
 }
 
 func (p *profileHandler) getUserProfileHandler(w http.ResponseWriter, r *http.Request) {
+	userId := utils.MustGetParam(r, "user_id")
 
+	profile, err := p.srv.GetProfile(r.Context(), userId)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrNotFound):
+			httperrors.NotFoundError(w, r, err)
+		default:
+			httperrors.InternalServerError(w, r, err)
+		}
+		return
+	}
+
+	utils.WriteSuccess(w, http.StatusOK, profile)
 }
